@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Net.Sockets;
-using System.Reflection;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
+using System.Security.Authentication;
+using System.Security.Cryptography;
+
 
 namespace Launcher_NewVersion
 {
@@ -71,6 +71,10 @@ namespace Launcher_NewVersion
         //CLock
         private readonly Stopwatch stopwatch = new Stopwatch();
 
+        // Tls12
+        public const SslProtocols _Tls12 = (SslProtocols)0x00000C00;
+        public const SecurityProtocolType Tls12 = (SecurityProtocolType)_Tls12;
+
         //Launcher Status
         private LauncherStatus _status;
 
@@ -130,6 +134,7 @@ namespace Launcher_NewVersion
             try
             {
                 WebClient wc = new WebClient();
+                wc.Encoding = System.Text.Encoding.UTF8;
                 string newsData = wc.DownloadString(new Uri(newsUri));
                 return JObject.Parse(newsData);
             }
@@ -190,8 +195,8 @@ namespace Launcher_NewVersion
                     Button newsLabel = this.newsTime[i];
                     newsControl.Dispatcher.Invoke(new Action(() =>
                     {
-                        if (title.Length > 28)
-                            newsControl.Content = title.Substring(0, 28) + " ... ";
+                        if (title.Length > 46)
+                            newsControl.Content = title.Substring(0, 46) + " ...";
                         else
                             newsControl.Content = title;
                         if (date[1].Length == 1)
@@ -220,8 +225,10 @@ namespace Launcher_NewVersion
                     }));
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine("Error in InitsNews: " + ex.ToString());
+
                 for (int i = 0; i < this.newsControls.Count; i++)
                 {
                     Button newsControl = this.newsControls[i];
@@ -257,7 +264,7 @@ namespace Launcher_NewVersion
                     Utils.Extract(Path.GetFullPath("(version).hlzip"), Path.GetFullPath("(version).hlzip"));
                     File.Delete(Path.GetFullPath("(version).hlzip"));
                     Version onlineVersion = new Version(File.ReadAllText(versionFile)); //Server verion
-                    VerSer.Text = onlineVersion.ToString();
+                    VerSer.Text = $"({onlineVersion})";
                     //Debug.WriteLine(onlineVersion.ToString());
 
 
@@ -290,12 +297,18 @@ namespace Launcher_NewVersion
                 this.newsControls.Add(News3);
                 this.newsControls.Add(News4);
                 this.newsControls.Add(News5);
+                this.newsControls.Add(News6);
+                this.newsControls.Add(News7);
+                this.newsControls.Add(News8);
                 this.newsTime.Add(lbl1);
                 this.newsTime.Add(lbl2);
                 this.newsTime.Add(lbl3);
                 this.newsTime.Add(lbl4);
                 this.newsTime.Add(lbl5);
-                
+                this.newsTime.Add(lbl6);
+                this.newsTime.Add(lbl7);
+                this.newsTime.Add(lbl8);
+
                 //Set default properties for controls
                 UpdateStatus_btn.IsEnabled = false;
                 UpdateStatus_btn.Opacity = 1;
@@ -326,8 +339,6 @@ namespace Launcher_NewVersion
                     } while (!check);
                 });
                 wdr.Start();
-
-                //this.json = this.FetchHashSum();
 
                 ////Debug.WriteLine("Checking update");
                 bool _isRequireUpdate = false;
@@ -919,12 +930,13 @@ namespace Launcher_NewVersion
         {
             try
             {
+                ServicePointManager.SecurityProtocol = Tls12;
                 WebClient wc = new WebClient();
                 string downloadfile = wc.DownloadString(new Uri(HashSumUri));
                 JObject json = JObject.Parse(downloadfile);
                 return json;
             }
-            catch
+            catch (Exception e)
             {
                 return null;
             }

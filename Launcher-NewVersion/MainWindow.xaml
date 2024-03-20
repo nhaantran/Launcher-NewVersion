@@ -84,7 +84,6 @@
                     <ControlTemplate TargetType="{x:Type ProgressBar}">
                         <Grid Name="TemplateRoot">
                             <Border Name="PART_Track" 
-                            CornerRadius="20" 
                             Background="White"
                             BorderBrush="{x:Null}" />
                             <Grid Name="PART_Indicator" ClipToBounds="true" HorizontalAlignment="Left">
@@ -269,7 +268,7 @@
         </Grid>
         <Border Grid.Row="1" 
                 Grid.Column="1" 
-                Margin="-68,-50,-80,8"
+                Margin="-68,-50,-80,5"
                 RenderTransformOrigin="0.5,0.5">
             <Border.RenderTransform>
                 <TransformGroup>
@@ -302,19 +301,25 @@
                         Background="{x:Null}" BorderBrush="{x:Null}" FontSize="15"
                         Foreground="#FF918078" FontFamily="Myriad Pro" FontWeight="Bold" 
                         Click="More_Click"  />
-                <StackPanel Grid.Row="1" >
-                    <Button Name="News1" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="13" Height="18" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" VerticalContentAlignment="Center"/>
-                    <Button Name="News2" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="13" Height="18" VerticalAlignment="Top" FontFamily="Myriad Pro" Margin="0,5,0,0" VerticalContentAlignment="Center"/>
-                    <Button Name="News3" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="13" Height="18" VerticalAlignment="Top" FontFamily="Myriad Pro" Margin="0,5,0,0" VerticalContentAlignment="Center"/>
-                    <Button Name="News4" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="13" Height="18" VerticalAlignment="Top" FontFamily="Myriad Pro" Margin="0,5,0,0" VerticalContentAlignment="Center"/>
-                    <Button Name="News5" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="13" Height="20" VerticalAlignment="Top" FontFamily="Myriad Pro" Margin="0,5,0,0" VerticalContentAlignment="Center"/>
+                <StackPanel Grid.Row="1">
+                    <Button Name="News1" HorizontalContentAlignment="Left" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Margin="0,0,0,0" VerticalContentAlignment="Stretch"/>
+                    <Button Name="News2" HorizontalContentAlignment="Left" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Margin="0,5,0,0" VerticalContentAlignment="Stretch"/>
+                    <Button Name="News3" HorizontalContentAlignment="Left" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Margin="0,5,0,0" VerticalContentAlignment="Stretch"/>
+                    <Button Name="News4" HorizontalContentAlignment="Left" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Margin="0,5,0,0" VerticalContentAlignment="Stretch"/>
+                    <Button Name="News5" HorizontalContentAlignment="Left" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Margin="0,5,0,0" VerticalContentAlignment="Stretch"/>
+                    <Button Name="News6" HorizontalContentAlignment="Left" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Margin="0,5,0,0" VerticalContentAlignment="Stretch"/>
+                    <Button Name="News7" HorizontalContentAlignment="Left" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Margin="0,5,0,0" VerticalContentAlignment="Stretch"/>
+                    <Button Name="News8" HorizontalContentAlignment="Left" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Margin="0,5,0,0" VerticalContentAlignment="Stretch"/>
                 </StackPanel>
                 <StackPanel HorizontalAlignment="Stretch"  Panel.ZIndex="10" Margin="5,0,0,0" Grid.Row="1" Grid.Column="1">
-                    <Button Name="lbl1" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="13" Height="18" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
-                    <Button Name="lbl2" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="13" Height="18" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" Margin="0,5,0,0" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
-                    <Button Name="lbl3" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="13" Height="18" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" Margin="0,5,0,0" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
-                    <Button Name="lbl4" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="13" Height="18" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" Margin="0,5,0,0" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
-                    <Button Name="lbl5" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="13" Height="20" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" Margin="0,5,0,0" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+                    <Button Name="lbl1" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" Margin="0,0,0,0" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+                    <Button Name="lbl2" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" Margin="0,5,0,0" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+                    <Button Name="lbl3" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" Margin="0,5,0,0" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+                    <Button Name="lbl4" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" Margin="0,5,0,0" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+                    <Button Name="lbl5" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" Margin="0,5,0,0" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+                    <Button Name="lbl6" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" Margin="0,5,0,0" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+                    <Button Name="lbl7" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" Margin="0,5,0,0" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+                    <Button Name="lbl8" IsEnabled="False" Style="{StaticResource LeftMouseButton}" Background="{x:Null}" Foreground="#FF918078" BorderBrush="{x:Null}" FontSize="17" Height="25" VerticalAlignment="Top" FontFamily="Myriad Pro" Content="" Margin="0,5,0,0" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
                 </StackPanel>
             </Grid>
             
