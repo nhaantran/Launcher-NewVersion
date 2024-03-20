@@ -22,6 +22,8 @@ namespace Launcher_NewVersion
         public MainWindow()
         {
             InitializeComponent();
+            versionFile = Path.GetFullPath("(version)");
+            gameExe = Path.GetFullPath(@"Bin\Game.exe");
         }
 
         #region Configurable Varibles
@@ -265,6 +267,7 @@ namespace Launcher_NewVersion
                     File.Delete(Path.GetFullPath("(version).hlzip"));
                     Version onlineVersion = new Version(File.ReadAllText(versionFile)); //Server verion
                     VerSer.Text = $"({onlineVersion})";
+
                     //Debug.WriteLine(onlineVersion.ToString());
 
 
@@ -929,8 +932,7 @@ namespace Launcher_NewVersion
         private JObject FetchHashSum()
         {
             try
-            {
-                ServicePointManager.SecurityProtocol = Tls12;
+            { 
                 WebClient wc = new WebClient();
                 string downloadfile = wc.DownloadString(new Uri(HashSumUri));
                 JObject json = JObject.Parse(downloadfile);
