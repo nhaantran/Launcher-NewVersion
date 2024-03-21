@@ -9,7 +9,7 @@ namespace Launcher_NewVersion
     {
         public App() 
         {
-            SslProtocals.SetUpSslProtocals(SslProtocols.Tls10);
+            SslProtocals.SetUpSslProtocals();
         }
     }
 }

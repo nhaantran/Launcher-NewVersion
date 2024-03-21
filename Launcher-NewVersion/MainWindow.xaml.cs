@@ -8,9 +8,6 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Security.Authentication;
-using System.Security.Cryptography;
-
 
 namespace Launcher_NewVersion
 {
@@ -26,11 +23,13 @@ namespace Launcher_NewVersion
             gameExe = Path.GetFullPath(@"Bin\Game.exe");
         }
 
+        //msbuild /p:TargetFramework=net35 /p:Configuration=Release /p:PublishSingleFile=true
+
         #region Configurable Varibles
         private static readonly double WIDTH = 1080f;
         private static readonly double HEIGHT = 740f;
         private string newsUri = null;
-        private string HashSumUri = null;
+        private List<string> HashSumUri = null;
         private string DownloadFileUri = null;
         private string HOME_URL = null;
         private string REGISTER_URL = null;
@@ -72,10 +71,6 @@ namespace Launcher_NewVersion
 
         //CLock
         private readonly Stopwatch stopwatch = new Stopwatch();
-
-        // Tls12
-        public const SslProtocols _Tls12 = (SslProtocols)0x00000C00;
-        public const SecurityProtocolType Tls12 = (SecurityProtocolType)_Tls12;
 
         //Launcher Status
         private LauncherStatus _status;
@@ -149,7 +144,7 @@ namespace Launcher_NewVersion
         private void Setup(JObject config)
         {
             this.newsUri = config["url"]["NewsUri"].ToString();
-            this.HashSumUri = config["url"]["HashSumUri"].ToString();
+            this.HashSumUri = config["url"]["HashSumUri"].ToObject<List<string>>();
             this.DownloadFileUri = config["url"]["DownloadFileUri"].ToString();
             this.HOME_URL = config["url"]["HOME_URL"].ToString();
             this.REGISTER_URL = config["url"]["REGISTER_URL"].ToString();
@@ -931,17 +926,22 @@ namespace Launcher_NewVersion
 
         private JObject FetchHashSum()
         {
-            try
-            { 
-                WebClient wc = new WebClient();
-                string downloadfile = wc.DownloadString(new Uri(HashSumUri));
-                JObject json = JObject.Parse(downloadfile);
-                return json;
-            }
-            catch (Exception e)
+            WebClient wc = new WebClient();
+            JObject json = null;
+            foreach (var uri in HashSumUri)
             {
-                return null;
+                try
+                {
+                    string downloadfile = wc.DownloadString(new Uri(uri));
+                    json = JObject.Parse(downloadfile);
+                    break;
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine($"Error in FetchHashSum {uri}: {e}");
+                }
             }
+            return json;
         }
 
         //private void setMode()
