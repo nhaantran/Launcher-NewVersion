@@ -12,6 +12,27 @@
         ContentRendered="Window_ContentRendered"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
+        <Style x:Key="VerticalButton" TargetType="Button">
+            <Setter Property="Height" Value="60"></Setter>
+            <Setter Property="Width" Value="40"></Setter>
+            <Setter Property="Margin" Value="0,0,5,0"></Setter>
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Name="border" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.85" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="NormalMouseButton" TargetType="Button">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Cursor" Value="Hand" />
@@ -84,7 +105,7 @@
                     <ControlTemplate TargetType="{x:Type ProgressBar}">
                         <Grid Name="TemplateRoot">
                             <Border Name="PART_Track" 
-                            Background="White"
+                            Background="Transparent"
                             BorderBrush="{x:Null}" />
                             <Grid Name="PART_Indicator" ClipToBounds="true" HorizontalAlignment="Left">
                                 <Rectangle Name="Indicator" Fill="{TemplateBinding Foreground}" RadiusX="3" RadiusY="3"/>
@@ -142,7 +163,7 @@
             <ColumnDefinition Width="140*"></ColumnDefinition>
             <ColumnDefinition Width="140*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <Image Name="Backgroud" Source="/img/VIETNAMESE/background_resize.png" Grid.RowSpan="3" Grid.ColumnSpan="3" Height="740" Width="1080" ></Image>
+        <Image Name="Backgroud" Source="/img/VIETNAMESE/background.png" Grid.RowSpan="3" Grid.ColumnSpan="3" Height="740" Width="1080" ></Image>
         <Image x:Name="LeftSide" Source="/img/VIETNAMESE/left-side.png"  Grid.Row="0" Grid.RowSpan="3" Stretch="Uniform" Panel.ZIndex="0" HorizontalAlignment="Right" Width="230" Margin="0,86,0,200"/>
         <StackPanel  Grid.Column="1" VerticalAlignment="Top" Orientation="Horizontal" Height="20" Margin="21,160,0,0" >
             <TextBlock Name="VersionClient" TextAlignment="Center" Text="Version của client hiện tại:" Foreground="White" FontSize="10" FontWeight="Normal" AutomationProperties.IsColumnHeader="True" FontFamily="Myriad Pro" VerticalAlignment="Center" Height="15"/>
@@ -152,7 +173,7 @@
             <TextBlock Name="VerSer" TextAlignment="Left" Grid.Column="5" Grid.Row="8" Foreground="White" FontSize="10" FontWeight="Normal" Grid.RowSpan="2" Grid.ColumnSpan="4" FontFamily="Myriad Pro" VerticalAlignment="Center" Height="15" Text="(5.005.007)" Margin="5,0,0,0"/>
 
         </StackPanel>
-        <StackPanel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal" Margin="60,80,0,0" >
+        <StackPanel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal" Margin="60,90,0,0" >
             <Button Name="Minimize" Style="{StaticResource NormalMouseButton}" Grid.Column="14" Grid.Row="6" Click="Minimize_Button" Grid.RowSpan="3" Grid.ColumnSpan="3" Width="20" Height="20" HorizontalAlignment="Left">
                 <Button.Background>
                     <ImageBrush Stretch="Uniform" ImageSource="/img/VIETNAMESE/resize-button.png"/>
@@ -244,6 +265,38 @@
                 </Button>
                 <!--<Label Content="*Được phát triển bởi Thiên Long Bảo Bảo" Grid.Row="2" HorizontalAlignment="Left" Height="20" Panel.ZIndex="17" FontWeight="Normal" Foreground="White" FontFamily="iCiel Bree Serif" FontStyle="Italic" FontSize="8" HorizontalContentAlignment="Left"/>-->
             </Grid>
+        </StackPanel>
+        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,35,-10,0">
+            <Button x:Name="Home" Style="{StaticResource VerticalButton}"  Width="52" Height="70"
+                    Click="Home_Click" IsTabStop="False" >
+                <Button.Background>
+                    <ImageBrush ImageSource="/img/VIETNAMESE/trang-chu.png" Stretch="UniformToFill"/>
+                </Button.Background>
+            </Button>
+            <Button x:Name="Register" Style="{StaticResource VerticalButton}" 
+                    Click="Register_Click" IsTabStop="False" >
+                <Button.Background>
+                    <ImageBrush ImageSource="/img/VIETNAMESE/dang-ky.png" Stretch="UniformToFill"/>
+                </Button.Background>
+            </Button>
+            <Button x:Name="Recharge" Style="{StaticResource VerticalButton}"  
+                    Click="Recharge_Click" IsTabStop="False" >
+                <Button.Background>
+                    <ImageBrush ImageSource="/img/VIETNAMESE/nap-the.png" Stretch="UniformToFill"/>
+                </Button.Background>
+            </Button>
+            <Button x:Name="Fanpage" Style="{StaticResource VerticalButton}" 
+                    Click="Fanpage_Click" IsTabStop="False" >
+                <Button.Background>
+                    <ImageBrush ImageSource="/img/VIETNAMESE/cong-dong.png" Stretch="UniformToFill"/>
+                </Button.Background>
+            </Button>
+            <Button x:Name="Group" Style="{StaticResource VerticalButton}"
+                    Click="Group_Click" >
+                <Button.Background>
+                    <ImageBrush ImageSource="/img/VIETNAMESE/ho-tro.png" Stretch="UniformToFill"/>
+                </Button.Background>
+            </Button>
         </StackPanel>
         <Grid Grid.Row="2" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Width="100" Height="100" Margin="10,-10,0,0" Panel.ZIndex="1">
             <Button Name="PlayGame" 

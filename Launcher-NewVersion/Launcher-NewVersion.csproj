@@ -148,5 +148,14 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\VIETNAMESE\cong-dong.png" />
+    <Resource Include="img\VIETNAMESE\dang-ky.png" />
+    <Resource Include="img\VIETNAMESE\ho-tro.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\VIETNAMESE\nap-the.png" />
+    <Resource Include="img\VIETNAMESE\trang-chu.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

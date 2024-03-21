@@ -1102,6 +1102,79 @@ namespace Launcher_NewVersion
 
             }
         }
+        private void Home_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo();
+                psi.UseShellExecute = true;
+                psi.FileName = HOME_URL;
+                Process.Start(psi);
+            }
+            catch
+            {
+                MessageBox.Show("Máy đang quá tải!");
+            }
+        }
+        private void Register_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo();
+                psi.UseShellExecute = true;
+                psi.FileName = REGISTER_URL;
+                Process.Start(psi);
+            }
+            catch
+            {
+                MessageBox.Show("Máy đang quá tải!");
+            }
+        }
+
+        private void Recharge_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo();
+                psi.UseShellExecute = true;
+                psi.FileName = RECHARGE_URL;
+                Process.Start(psi);
+            }
+            catch
+            {
+                MessageBox.Show("Máy đang quá tải!");
+            }
+        }
+
+        private void Fanpage_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo();
+                psi.UseShellExecute = true;
+                psi.FileName = FANPAGE_URL;
+                Process.Start(psi);
+            }
+            catch
+            {
+                MessageBox.Show("Máy đang quá tải!");
+            }
+        }
+
+        private void Group_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo();
+                psi.UseShellExecute = true;
+                psi.FileName = GROUP_URL;
+                Process.Start(psi);
+            }
+            catch
+            {
+
+            }
+        }
 
         #region More_btn
         private void More_Click(object sender, RoutedEventArgs e)
