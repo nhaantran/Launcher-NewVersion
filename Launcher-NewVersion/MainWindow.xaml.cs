@@ -143,19 +143,19 @@ namespace Launcher_NewVersion
 
         private void Setup(JObject config)
         {
-            this.newsUri = config["url"]["NewsUri"].ToString();
-            this.HashSumUri = config["url"]["HashSumUri"].ToObject<List<string>>();
-            this.DownloadFileUri = config["url"]["DownloadFileUri"].ToString();
-            this.HOME_URL = config["url"]["HOME_URL"].ToString();
-            this.REGISTER_URL = config["url"]["REGISTER_URL"].ToString();
-            this.RECHARGE_URL = config["url"]["RECHARGE_URL"].ToString();
-            this.FANPAGE_URL = config["url"]["FANPAGE_URL"].ToString();
-            this.GROUP_URL = config["url"]["GROUP_URL"].ToString();
-            this.NEWBIE_URL = config["url"]["NEWBIE_URL"].ToString();
-            this.MORE_URL = config["url"]["MORE_URL"].ToString();
-
             try
             {
+                this.newsUri = config["url"]["NewsUri"].ToString();
+                this.HashSumUri = config["url"]["HashSumUri"].ToObject<List<string>>();
+                this.DownloadFileUri = config["url"]["DownloadFileUri"].ToString();
+                this.HOME_URL = config["url"]["HOME_URL"].ToString();
+                this.REGISTER_URL = config["url"]["REGISTER_URL"].ToString();
+                this.RECHARGE_URL = config["url"]["RECHARGE_URL"].ToString();
+                this.FANPAGE_URL = config["url"]["FANPAGE_URL"].ToString();
+                this.GROUP_URL = config["url"]["GROUP_URL"].ToString();
+                this.NEWBIE_URL = config["url"]["NEWBIE_URL"].ToString();
+                this.MORE_URL = config["url"]["MORE_URL"].ToString();
+
                 string loginServer = @"Patch\LoginServer.txt.hlzip";
                 Utils.DownloadFile(DownloadFileUri + "Patch/LoginServer.txt.hlzip", "Patch/LoginServer.txt.hlzip");
                 string path = Path.GetFullPath(loginServer);
