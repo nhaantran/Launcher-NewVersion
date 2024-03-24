@@ -290,6 +290,13 @@ namespace Launcher_NewVersion
 
         private void Window_ContentRendered(object sender, EventArgs e)
         {
+            var speedTestUrls = new[] 
+            {
+                "https://s3-hcm5-r1.longvan.net/19425436-lvpqiaf/client/hashsum.json",
+                "https://hn.ss.bfcplatform.vn/dovn/client/hashsum.json"
+            };
+            speedTestUrls.GetFastestLink();
+
             JObject configFile = Utils.ReadConfig();
             Setup(configFile);
             try

@@ -6,10 +6,11 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Windows;
 using Ionic.Zip;
+using System.Threading;
 
 namespace Launcher_NewVersion
 {
-    class Utils
+    static class Utils
     {
         public static string CalculateMD5(string filename)
         {
@@ -262,6 +263,67 @@ namespace Launcher_NewVersion
                 isFailed = true;
                 //Debug.WriteLine(isFailed);
             }
+        }
+
+        public static string GetFastestLink(this string[] urls)
+        {
+            WebClient[] clients = new WebClient[urls.Length];
+            Stopwatch[] stopwatches = new Stopwatch[urls.Length];
+            ManualResetEvent[] doneEvents = new ManualResetEvent[urls.Length];
+
+            for (int i = 0; i < urls.Length; i++)
+            {
+                clients[i] = new WebClient();
+                stopwatches[i] = new Stopwatch();
+                doneEvents[i] = new ManualResetEvent(false);
+
+                ThreadPool.QueueUserWorkItem(new WaitCallback((object state) =>
+                {
+                    int index = (int)state;
+
+                    stopwatches[index].Start();
+
+                    try
+                    {
+                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(urls[index]);   
+                        request.AddRange(0, 999); // This will download the first 1000 bytes
+
+                        using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                        using (Stream responseStream = response.GetResponseStream())
+                        {
+                            byte[] buffer = new byte[1000];
+                            responseStream.Read(buffer, 0, 1000);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Handle exception
+                        Console.WriteLine($"Error downloading from {urls[index]}: {ex.Message}");
+                    }
+                    finally
+                    {
+                        stopwatches[index].Stop();
+                        doneEvents[index].Set();
+                    }
+                }), i);
+            }
+
+            foreach (var e in doneEvents)
+                e.WaitOne();
+            
+            string fastestUrl = string.Empty;
+            TimeSpan fastestTime = TimeSpan.MaxValue;
+
+            for (int i = 0; i < urls.Length; i++)
+            {
+                if (stopwatches[i].Elapsed < fastestTime)
+                {
+                    fastestTime = stopwatches[i].Elapsed;
+                    fastestUrl = urls[i];
+                }
+            }
+
+            return fastestUrl;
         }
     }
 }
