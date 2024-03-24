@@ -105,7 +105,7 @@
                     <ControlTemplate TargetType="{x:Type ProgressBar}">
                         <Grid Name="TemplateRoot">
                             <Border Name="PART_Track" 
-                            Background="Transparent"
+                            Background="White"
                             BorderBrush="{x:Null}" />
                             <Grid Name="PART_Indicator" ClipToBounds="true" HorizontalAlignment="Left">
                                 <Rectangle Name="Indicator" Fill="{TemplateBinding Foreground}" RadiusX="3" RadiusY="3"/>

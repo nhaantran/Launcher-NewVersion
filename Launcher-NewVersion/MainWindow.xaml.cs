@@ -1,4 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Launcher;
+using Launcher.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,7 +22,7 @@ namespace Launcher_NewVersion
         public MainWindow()
         {
             InitializeComponent();
-            versionFile = Path.GetFullPath("(version)");
+            versionFile = Path.GetFullPath(HashSumFileValue.VersionValue);
             gameExe = Path.GetFullPath(@"Bin\Game.exe");
         }
 
@@ -55,6 +58,8 @@ namespace Launcher_NewVersion
         protected string setting = @"Bin\Launcher\Setting.txt";
         private string ipSavedFile = @"Bin\Launcher\Save.txt";
         private string modeSavedFile = @"Bin\mode.cfig";
+        private string LibFile = "Lib.txt";
+        private string GameFilePath = "Bin/OgreMain.dll";
         string[] names_path;
         string[] names;
         string[] paths;
@@ -184,7 +189,7 @@ namespace Launcher_NewVersion
                     string[] date = str_date.Substring(0, 6).Split('/');
                     //Debug.WriteLine(date[0] + "/" + date[1]);
 
-                    //string id = news["data"]["news"][i]["id"].ToString();
+                    //string id = news["data"]["news"][count]["id"].ToString();
                     string url = news["data"]["news"][i]["link"].ToString();
                     //Debug.WriteLine(url);
 
@@ -757,11 +762,90 @@ namespace Launcher_NewVersion
             ////Debug.WriteLine("Complete: Extract Thread");
         }
 
+        private HashSumFileDetail CreateHashSumFileDetail(
+            KeyValuePair<string, JToken> file,
+            StateValue state)
+        {
+            return new HashSumFileDetail
+            {
+                Path = file.Key,
+                Hash = file.Value[HashSumFileValue.Hash].ToString(),
+                State = state.ToString(),
+                DownloadLink = JsonConvert.DeserializeObject<List<DownloadLinkDetail>>(file.Value[HashSumFileValue.DownLoadUri].ToString())
+                                ?? new List<DownloadLinkDetail>()
+            };
+        }
+
+        private void ExtractFileHashSum(
+            ref List<HashSumFileDetail> hashSumFileDetails,
+            JArray updateFiles = null,
+            StateValue state = StateValue.added)
+        {
+            try
+            {
+                HashSumFileDetail lastFileToDownload = null;
+                int count = 0;
+                foreach (var file in clientFiles)
+                {
+                    if (HashSumFileValue.VersionValue.Contains(file.Key))
+                    {
+                        continue;
+                    }
+                    var fileObj = CreateHashSumFileDetail(file, state);
+                    if (state == StateValue.done)
+                    {
+                        if (file.Key == hashSumFileDetails[count].Path.ToString())
+                        {
+                            if (file.Value[HashSumFileValue.Hash].ToString() == hashSumFileDetails[count].Hash 
+                                && hashSumFileDetails[count].State == state.ToString())
+                            {
+                                fileObj.State = state.ToString();
+                            }
+                            count++;
+                            updateFiles.Add(JObject.FromObject(fileObj));
+                        }
+                        else if (file.Key != GameFilePath)
+                        {
+                            updateFiles.Add(JObject.FromObject(fileObj));
+                        }
+                        else
+                        {
+                            if (file.Value[HashSumFileValue.Hash].ToString() == hashSumFileDetails[hashSumFileDetails.Count - 1].Hash 
+                                && hashSumFileDetails[hashSumFileDetails.Count - 1].State == state.ToString())
+                            {
+                                fileObj.State = state.ToString();
+                            }
+                            lastFileToDownload = fileObj;
+                        }
+                    }
+                    else if (fileObj.Path == GameFilePath)
+                    {
+                        lastFileToDownload = fileObj;
+                        continue;
+                    }
+                    hashSumFileDetails.Add(fileObj);
+                }
+                if(lastFileToDownload != null)
+                    hashSumFileDetails.Add(lastFileToDownload);
+
+                File.WriteAllText(Path.GetFullPath(LibFile), JsonConvert.SerializeObject(hashSumFileDetails));
+                //File.WriteAllText(Path.GetFullPath(LibFile), hashSumFileDetails.ToString());
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in ExtractFileHashSum: {ex}");
+            }
+        }
+
         private void AnalyzeRequiredFiles(bool forceRecheck = false)
         {
             try
             {
-                this.json = this.FetchHashSum();
+                //this.json = this.FetchHashSum();
+
+                string filePath = "C:\\Users\\Lenovo\\Downloads\\hashsum.json";
+                string json = File.ReadAllText(filePath);
+                this.json = JObject.Parse(json);
                 if (this.json != null)
                 {
                     this.clientFiles = this.json["data"].ToObject<JObject>();
@@ -794,134 +878,31 @@ namespace Launcher_NewVersion
                         break;
                 }
             }
-            JArray localFiles = new JArray();
+            //JArray localFiles = new JArray();
+            var hashSumFileDetail = new List<HashSumFileDetail>();
             bool isEmty = false;
-            if (File.ReadAllText(Path.GetFullPath("Lib.txt")) == "")
+            if (File.ReadAllText(Path.GetFullPath(LibFile)) == "")
             {
-                foreach (var file in clientFiles)
-                {
-                    if (file.Key == "(version)")
-                    {
-                        continue;
-                    }
-                    JObject fileObj = new JObject();
-                    fileObj["path"] = file.Key;
-                    fileObj["hash"] = "";
-                    fileObj["state"] = "";
-                    fileObj["download-link"] = "";
-                    localFiles.Add(fileObj);
-                }
-                File.WriteAllText(Path.GetFullPath("Lib.txt"), localFiles.ToString());
+                ExtractFileHashSum(ref hashSumFileDetail);
                 isEmty = true;
             }
             else
             {
                 try
                 {
-                    string _localFiles = File.ReadAllText(Path.GetFullPath("Lib.txt"));
-                    localFiles = JArray.Parse(_localFiles);
+                    var fileLibValue = File.ReadAllText(Path.GetFullPath(LibFile));
+                    hashSumFileDetail = JsonConvert.DeserializeObject<List<HashSumFileDetail>>(fileLibValue);
+                    //localFiles = JArray.Parse(fileLibValue);
                 }
                 catch
                 {
-                    foreach (var file in clientFiles)
-                    {
-                        if (file.Key == "version")
-                        {
-                            continue;
-                        }
-                        JObject fileObj = new JObject();
-                        fileObj["path"] = file.Key;
-                        fileObj["hash"] = "";
-                        fileObj["state"] = "";
-                        fileObj["download-link"] = "";
-                        localFiles.Add(fileObj);
-                    }
-                    File.WriteAllText(Path.GetFullPath("Lib.txt"), localFiles.ToString());
+                    ExtractFileHashSum(ref hashSumFileDetail);
                 }
             }
-            int i = 0;
-            JObject tempObj = null;
-            if (!isClick && !isEmty)
-            {
-                foreach (var file in clientFiles)
-                {
-                    try
-                    {
-                        if (file.Key == "(version)")
-                        {
-                            continue;
-                        }
-                        JObject fileObj = new JObject();
-                        fileObj["path"] = file.Key;
-                        fileObj["hash"] = file.Value["hash"];
-                        fileObj["state"] = "added";
-                        if (file.Value["download"] != null)
-                            fileObj["download-link"] = file.Value["download"];
-                        else
-                            fileObj["download-link"] = "";
-
-
-                        if (file.Key == localFiles[i]["path"].ToString())
-                        {
-                            if (file.Value["hash"].ToString() == localFiles[i]["hash"].ToString() && localFiles[i]["state"].ToString() == "done")
-                            {
-                                fileObj["state"] = "done";
-                            }
-                            i++;
-                            this.updateFiles.Add(fileObj);
-                        }
-                        else
-                            if (file.Key != "Bin/OgreMain.dll")
-                        {
-                            this.updateFiles.Add(fileObj);
-                        }
-                        else
-                        {
-                            if (file.Value["hash"].ToString() == localFiles[localFiles.Count - 1]["hash"].ToString() && localFiles[localFiles.Count - 1]["state"].ToString() == "done")
-                            {
-                                fileObj["state"] = "done";
-                            }
-                            tempObj = fileObj;
-                        }
-                    }
-                    catch
-                    {
-
-                    }
-                }
-            }
+            if (!isClick && !isEmty) 
+                ExtractFileHashSum(ref hashSumFileDetail, updateFiles, StateValue.done);
             else
-                foreach (var file in clientFiles)
-                {
-                    try
-                    {
-                        if (file.Key == "(version)")
-                        {
-                            continue;
-                        }
-                        JObject fileObj = new JObject();
-                        fileObj["path"] = file.Key;
-                        fileObj["hash"] = file.Value["hash"];
-                        fileObj["state"] = "added";
-                        if (file.Value["download"] != null)
-                            fileObj["download-link"] = file.Value["download"];
-                        else
-                            fileObj["download-link"] = "";
-                        if (file.Key == "Bin/OgreMain.dll")
-                        {
-                            tempObj = fileObj;
-                            continue;
-                        }
-                        this.updateFiles.Add(fileObj);
-                    }
-                    catch
-                    {
-
-                    }
-                }
-            if (tempObj != null)
-                this.updateFiles.Add(tempObj);
-            File.WriteAllText(Path.GetFullPath("Lib.txt"), updateFiles.ToString());
+                ExtractFileHashSum(ref hashSumFileDetail, updateFiles);
         }
 
         private JObject FetchHashSum()
@@ -967,8 +948,8 @@ namespace Launcher_NewVersion
         //        }
         //        ////Debug.WriteLine("names: " + names, "paths: " + paths);
         //        List<string> selection = new List<string>();
-        //        for (int i = 0; i < names_path.Length; i++)
-        //            selection.Add(names[i]);
+        //        for (int count = 0; count < names_path.Length; count++)
+        //            selection.Add(names[count]);
         //        selectMode.ItemsSource = selection;
         //        //selectMode.SelectedItem = selection[0]; 
 
