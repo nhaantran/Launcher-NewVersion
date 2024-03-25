@@ -3,9 +3,13 @@
     public enum LauncherStatus
     {
         ready,
+
         failed,
+        
         downloadingUpdate,
+        
         Checking,
+        
         _verifying,
     }
 }

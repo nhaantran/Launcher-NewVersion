@@ -76,6 +76,8 @@
     <Compile Include="Models\HashSumFileValue.cs" />
     <Compile Include="Models\DownloadLinkDetail.cs" />
     <Compile Include="Models\HashSumFileDetail.cs" />
+    <Compile Include="Models\LibFileValue.cs" />
+    <Compile Include="Models\Mirror.cs" />
     <Compile Include="Models\StateValue.cs" />
     <Compile Include="SslProtocals.cs" />
     <Compile Include="Utils.cs" />

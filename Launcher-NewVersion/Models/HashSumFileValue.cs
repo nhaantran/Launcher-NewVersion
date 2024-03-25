@@ -5,14 +5,16 @@ namespace Launcher
     {
         public const string FileName = "filename";
 
-        public const string VersionValue = "(version)";
-        
+        public const string VersionKey = "(version)";
+
+        public const string Data = "data";
+
+        public const string Version = "version";
+
         public const string Hash = "hash";
-        
+
         public const string DownLoadUri = "download";
 
-        public const string AddedState = "added";
-
-        public const string DoneState = "done";
+        public const string Mirrors = "mirrors";
     }
 }

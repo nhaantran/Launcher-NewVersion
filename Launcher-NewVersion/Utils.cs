@@ -7,6 +7,8 @@ using System.Security.Cryptography;
 using System.Windows;
 using Ionic.Zip;
 using System.Threading;
+using System.Windows.Documents;
+using System.Collections.Generic;
 
 namespace Launcher_NewVersion
 {
@@ -265,13 +267,13 @@ namespace Launcher_NewVersion
             }
         }
 
-        public static string GetFastestLink(this string[] urls)
+        public static string GetFastestLink(this List<string> urls)
         {
-            WebClient[] clients = new WebClient[urls.Length];
-            Stopwatch[] stopwatches = new Stopwatch[urls.Length];
-            ManualResetEvent[] doneEvents = new ManualResetEvent[urls.Length];
+            WebClient[] clients = new WebClient[urls.Count];
+            Stopwatch[] stopwatches = new Stopwatch[urls.Count];
+            ManualResetEvent[] doneEvents = new ManualResetEvent[urls.Count];
 
-            for (int i = 0; i < urls.Length; i++)
+            for (int i = 0; i < urls.Count; i++)
             {
                 clients[i] = new WebClient();
                 stopwatches[i] = new Stopwatch();
@@ -314,7 +316,7 @@ namespace Launcher_NewVersion
             string fastestUrl = string.Empty;
             TimeSpan fastestTime = TimeSpan.MaxValue;
 
-            for (int i = 0; i < urls.Length; i++)
+            for (int i = 0; i < urls.Count; i++)
             {
                 if (stopwatches[i].Elapsed < fastestTime)
                 {
@@ -324,6 +326,26 @@ namespace Launcher_NewVersion
             }
 
             return fastestUrl;
+        }
+
+        public static JObject DownloadFromMultipleUris(List<string> uris)
+        {
+            WebClient wc = new WebClient();
+            JObject json = null;
+            foreach (var uri in uris)
+            {
+                try
+                {
+                    string downloadfile = wc.DownloadString(new Uri(uri));
+                    json = JObject.Parse(downloadfile);
+                    break;
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine($"Error in DownloadFromMultipleUris {uri}: {e}");
+                }
+            }
+            return json;
         }
     }
 }

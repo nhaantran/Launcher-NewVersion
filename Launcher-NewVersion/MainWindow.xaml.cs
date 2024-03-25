@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Windows;
@@ -22,7 +23,7 @@ namespace Launcher_NewVersion
         public MainWindow()
         {
             InitializeComponent();
-            versionFile = Path.GetFullPath(HashSumFileValue.VersionValue);
+            versionFile = Path.GetFullPath(HashSumFileValue.VersionKey);
             gameExe = Path.GetFullPath(@"Bin\Game.exe");
         }
 
@@ -50,6 +51,7 @@ namespace Launcher_NewVersion
         private string gameExe;
         private JObject json = null;
         private JObject clientFiles;
+        private string priorityMirror;
         protected bool isFailed = false;
 
         private List<string> bannersDatacontext = new List<string>();
@@ -260,42 +262,35 @@ namespace Launcher_NewVersion
                     localVersion = Version.zero;
                     Ver.Text = localVersion.ToString();
                 }
-                try
+                Utils.DownloadFile(DownloadFileUri + @"(version).hlzip", "(version).hlzip");
+                Utils.Extract(Path.GetFullPath("(version).hlzip"), Path.GetFullPath("(version).hlzip"));
+                File.Delete(Path.GetFullPath("(version).hlzip"));
+                Version onlineVersion = new Version(File.ReadAllText(versionFile)); //Server verion
+                VerSer.Text = $"({onlineVersion})";
+                //Debug.WriteLine(onlineVersion.ToString());
+                if (onlineVersion.Equals(localVersion))
                 {
-                    Utils.DownloadFile(DownloadFileUri + @"(version).hlzip", "(version).hlzip");
-                    Utils.Extract(Path.GetFullPath("(version).hlzip"), Path.GetFullPath("(version).hlzip"));
-                    File.Delete(Path.GetFullPath("(version).hlzip"));
-                    Version onlineVersion = new Version(File.ReadAllText(versionFile)); //Server verion
-                    VerSer.Text = $"({onlineVersion})";
-
-                    //Debug.WriteLine(onlineVersion.ToString());
-
-
-                    if (onlineVersion.Equals(localVersion))
-                    {
-                        return false;
-                    }
-                    ////Debug.WriteLine(File.ReadAllText(Path.GetFullPath("(version)")));
+                    return false;
                 }
-                catch (Exception ex)
-                {
-
-                }
+                ////Debug.WriteLine(File.ReadAllText(Path.GetFullPath("(version)")));
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"IsRequireUpdate error: {ex}");
             }
             return true;
         }
 
         private void Window_ContentRendered(object sender, EventArgs e)
         {
-            var speedTestUrls = new[] 
-            {
-                "https://s3-hcm5-r1.longvan.net/19425436-lvpqiaf/client/hashsum.json",
-                "https://hn.ss.bfcplatform.vn/dovn/client/hashsum.json"
-            };
-            speedTestUrls.GetFastestLink();
+            // for local testing
+            //var speedTestUrls = new List<string>
+            //()
+            //{
+            //  "https://s3-hcm5-r1.longvan.net/19425436-lvpqiaf/client/hashsum.json",
+            //    "https://hn.ss.bfcplatform.vn/dovn/client/hashsum.json"
+            //};
+            //speedTestUrls.GetFastestLink();
 
             JObject configFile = Utils.ReadConfig();
             Setup(configFile);
@@ -353,10 +348,10 @@ namespace Launcher_NewVersion
                 ////Debug.WriteLine("Checking update");
                 bool _isRequireUpdate = false;
                 Status = LauncherStatus._verifying;
-                if (!File.Exists(Path.GetFullPath("Lib.txt")))
+                if (!File.Exists(Path.GetFullPath(LibFile)))
                 {
                     _isRequireUpdate = true;
-                    fsHashSum = new FileStream(Path.GetFullPath("Lib.txt"), FileMode.Create, FileAccess.ReadWrite);
+                    fsHashSum = new FileStream(Path.GetFullPath(LibFile), FileMode.Create, FileAccess.ReadWrite);
                     fsHashSum.Close();
                 }
 
@@ -449,7 +444,7 @@ namespace Launcher_NewVersion
                     completed = 0;
                     foreach (var x in this.updateFiles)
                     {
-                        if (x["state"].ToString() == "done")
+                        if (x[LibFileValue.State].ToString() == StateValue.done.ToString())
                             completed++;
                     }
 
@@ -469,8 +464,8 @@ namespace Launcher_NewVersion
 
                 if (completed == total)
                 {
-                    File.WriteAllText(Path.GetFullPath("(version)"), json["data"]["version"].ToString());
-                    File.WriteAllText(Path.GetFullPath("Lib.txt"), this.updateFiles.ToString());
+                    File.WriteAllText(Path.GetFullPath(HashSumFileValue.VersionKey), json[HashSumFileValue.Data][HashSumFileValue.Version].ToString());
+                    File.WriteAllText(Path.GetFullPath(LibFile), this.updateFiles.ToString());
                     Thread.Sleep(2000);
                 }
 
@@ -494,7 +489,7 @@ namespace Launcher_NewVersion
                     PlayGame.Opacity = 1;
                     FixClient.IsEnabled = true;
                     FixClient.Opacity = 1;
-                    Ver.Text = json["data"]["version"].ToString();
+                    Ver.Text = json[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
                     //setMode();
                     ////Debug.WriteLine(selectMode.DataContext.ToString());
                 };
@@ -515,25 +510,25 @@ namespace Launcher_NewVersion
                 for (int i = 0; i < this.updateFiles.Count && this.isUpdating; i++)
                 {
                     var file = this.updateFiles[i];
-                    if (file["state"].ToString() == "done")
+                    if (file[LibFileValue.State].ToString() == StateValue.done.ToString())
                     {
                         continue;
                     }
-                    string filePath = file["path"].ToString();
+                    string filePath = file[LibFileValue.Path].ToString();
                     string hash;
                     if (File.Exists(Path.GetFullPath(filePath)))
                     {
                         hash = Utils.CalculateMD5(filePath);
-                        if (hash == file["hash"].ToString())
+                        if (hash == file[LibFileValue.Hash].ToString())
                         {
-                            file["state"] = "done";
+                            file[LibFileValue.State] = StateValue.done.ToString();
                             continue;
                         }
-                        file["hash"] = hash;
+                        file[LibFileValue.Hash] = hash;
                     }
-                    file["state"] = "preVerified";
+                    file[LibFileValue.State] = StateValue.preVerified.ToString();
                 }
-                File.WriteAllText(Path.GetFullPath("Lib.txt"), updateFiles.ToString());
+                File.WriteAllText(Path.GetFullPath(LibFile), updateFiles.ToString());
             }
             catch
             {
@@ -558,7 +553,7 @@ namespace Launcher_NewVersion
                     //Waiting for state is preVerified
                     while (this.isUpdating)
                     {
-                        if (file["state"].ToString() == "preVerified" || file["state"].ToString() == "done")
+                        if (file[LibFileValue.State].ToString() == StateValue.preVerified.ToString() || file[LibFileValue.State].ToString() == StateValue.done.ToString())
                             break;
                         Action action1 = () =>
                         {
@@ -578,7 +573,7 @@ namespace Launcher_NewVersion
                     if (isFailed)
                         break;
                     //Skip welldone file
-                    if (file["state"].ToString() == "done" || file["state"].ToString() == "downloaded")
+                    if (file[LibFileValue.State].ToString() == StateValue.done.ToString() || file[LibFileValue.State].ToString() == StateValue.downloaded.ToString())
                     {
                         continue;
                     }
@@ -589,44 +584,22 @@ namespace Launcher_NewVersion
                     };
                     this.Dispatcher.Invoke(action);
                     //Download file
-                    string localFilePath = file["path"].ToString();
-                    string downloadFilePath = file["path"].ToString() + ".hlzip";
-                    string fileUri = DownloadFileUri + file["path"].ToString() + ".hlzip";
-                    if (!file["download-link"].ToString().Equals(""))
-                        fileUri = (string)file["download-link"][0];
+                    string localFilePath = file[LibFileValue.Path].ToString();
+                    string downloadFilePath = file[LibFileValue.Path].ToString() + ".hlzip";
+                    string fileUri = DownloadFileUri + file[LibFileValue.Path].ToString() + ".hlzip";
 
-                    try
-                    {
-                        downloadFilePath = Path.GetFullPath(downloadFilePath);
+                    var downloadLinkDetails = file[LibFileValue.DownloadLink].ToObject<List<DownloadLinkDetail>>();
+                    fileUri = downloadLinkDetails
+                        .Where(downloadLinkDetail => downloadLinkDetail.Mirror == priorityMirror)
+                        .Select(downloadLinkDetail => downloadLinkDetail.Url).FirstOrDefault();
+                                        
+                    //if (!file[LibFileValue.DownloadLink].ToString().Equals(""))
+                    //    fileUri = (string)file[LibFileValue.DownloadLink][0];
 
-                        string destinationDirectory = Path.GetDirectoryName(downloadFilePath);
-                        if (!Directory.Exists(destinationDirectory))
-                        {
-                            Directory.CreateDirectory(destinationDirectory);
-                        }
-                        string[] nameoffile = localFilePath.Split('/');
-                        WebClient wc = new WebClient();
-                        wc.DownloadProgressChanged += new DownloadProgressChangedEventHandler(Wc_DownloadProgressChanged);
-                        wc.DownloadFileCompleted += Wc_DownloadFileCompleted;
-                        var syncObject = new Object();
-                        lock (syncObject)
-                        {
-                            wc.DownloadFileAsync(new Uri(fileUri), downloadFilePath, syncObject);
-                            FileName.Dispatcher.Invoke(new Action(() => {
-                                stopwatch.Start();
-                                FileName.Content = nameoffile[nameoffile.Length - 1];
-                            }));
-                            Monitor.Wait(syncObject);
-                        }
-                    }
-                    catch
-                    {
-                        //MessageBox.Show("Server is overloading!!");
-                        this.isFailed = true;
-                    }
+                    DownLoadFile(downloadFilePath, localFilePath, fileUri);
                     if (!isFailed)
                     {
-                        file["state"] = "downloaded";
+                        file[LibFileValue.State] = StateValue.downloaded.ToString();
                     }
                     else
                     {
@@ -636,7 +609,7 @@ namespace Launcher_NewVersion
                         };
                         this.Dispatcher.Invoke(action);
                         MessageBox.Show("Update failed!!!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        file["state"] = "failed";
+                        file[LibFileValue.State] = StateValue.failed.ToString();
                         break;
                     }
 
@@ -659,6 +632,39 @@ namespace Launcher_NewVersion
             }
             ////Debug.WriteLine("Complete: Download Thread");
 
+        }
+
+        private void DownLoadFile(string downloadFilePath, string localFilePath, string fileUri)
+        {
+            try
+            {
+                downloadFilePath = Path.GetFullPath(downloadFilePath);
+
+                string destinationDirectory = Path.GetDirectoryName(downloadFilePath);
+                if (!Directory.Exists(destinationDirectory))
+                {
+                    Directory.CreateDirectory(destinationDirectory);
+                }
+                string[] nameoffile = localFilePath.Split('/');
+                WebClient wc = new WebClient();
+                wc.DownloadProgressChanged += new DownloadProgressChangedEventHandler(Wc_DownloadProgressChanged);
+                wc.DownloadFileCompleted += Wc_DownloadFileCompleted;
+                var syncObject = new Object();
+                lock (syncObject)
+                {
+                    wc.DownloadFileAsync(new Uri(fileUri), downloadFilePath, syncObject);
+                    FileName.Dispatcher.Invoke(new Action(() => {
+                        stopwatch.Start();
+                        FileName.Content = nameoffile[nameoffile.Length - 1];
+                    }));
+                    Monitor.Wait(syncObject);
+                }
+            }
+            catch
+            {
+                //MessageBox.Show("Server is overloading!!");
+                this.isFailed = true;
+            }
         }
 
         private void Wc_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
@@ -685,7 +691,7 @@ namespace Launcher_NewVersion
             }
             catch (Exception ex)
             {
-                //Debug.WriteLine(ex.Message);
+                Debug.WriteLine($"Wc_DownloadProgressChanged failed: {ex}");
             }
         }
 
@@ -701,21 +707,21 @@ namespace Launcher_NewVersion
                     //Waiting for state is preVerified
                     while (this.isUpdating)
                     {
-                        if (file["state"].ToString() == "downloaded" || file["state"].ToString() == "done")
+                        if (file[LibFileValue.State].ToString() == StateValue.downloaded.ToString() || file[LibFileValue.State].ToString() == StateValue.done.ToString())
                             break;
 
                         Thread.Sleep(10);
                     }
 
                     //Skip welldone file
-                    if (file["state"].ToString() == "done")
+                    if (file[LibFileValue.State].ToString() == StateValue.done.ToString())
                     {
                         continue;
                     }
 
                     //Extract file
-                    string localFilePath = file["path"].ToString();
-                    string downloadFilePath = file["path"].ToString() + ".hlzip";
+                    string localFilePath = file[LibFileValue.Path].ToString();
+                    string downloadFilePath = file[LibFileValue.Path].ToString() + ".hlzip";
                     bool _isExtracting = true;
                     try
                     {
@@ -742,7 +748,7 @@ namespace Launcher_NewVersion
                         //            break;
                         //    }
                         //}
-                        file["state"] = "failed";
+                        file[LibFileValue.State] = StateValue.failed.ToString();
                         File.Delete(downloadFilePath);
                         Debug.WriteLine(ex.ToString());
                         continue;
@@ -750,13 +756,13 @@ namespace Launcher_NewVersion
 
                     if (!_isExtracting)
                     {
-                        file["state"] = "done";
+                        file[LibFileValue.State] = StateValue.done.ToString();
                     }
                     else
                     {
-                        Debug.WriteLine("Failed");
+                        Debug.WriteLine("ExtractThread: Failed");
                         isFailed = true;
-                        file["state"] = "failed";
+                        file[LibFileValue.State] = StateValue.failed.ToString();
                         this.Dispatcher.Invoke(new Action(() => { Status = LauncherStatus.failed; }));
                     }
                     ////Debug.WriteLine("Extracted: " + file["path"]);
@@ -794,7 +800,7 @@ namespace Launcher_NewVersion
                 int count = 0;
                 foreach (var file in clientFiles)
                 {
-                    if (HashSumFileValue.VersionValue.Contains(file.Key))
+                    if (HashSumFileValue.VersionKey.Contains(file.Key))
                     {
                         continue;
                     }
@@ -825,17 +831,24 @@ namespace Launcher_NewVersion
                             lastFileToDownload = fileObj;
                         }
                     }
-                    else if (fileObj.Path == GameFilePath)
+                    else if (fileObj.Path == GameFilePath && updateFiles != null)
                     {
                         lastFileToDownload = fileObj;
                         continue;
                     }
-                    hashSumFileDetails.Add(fileObj);
+                    else if(updateFiles != null)
+                    {
+                        updateFiles.Add(JObject.FromObject(fileObj));
+                    }
+                    else hashSumFileDetails.Add(fileObj);
                 }
                 if(lastFileToDownload != null)
-                    hashSumFileDetails.Add(lastFileToDownload);
+                    updateFiles.Add(JObject.FromObject(lastFileToDownload));
 
-                File.WriteAllText(Path.GetFullPath(LibFile), JsonConvert.SerializeObject(hashSumFileDetails));
+                if(updateFiles != null)
+                    File.WriteAllText(Path.GetFullPath(LibFile), JsonConvert.SerializeObject(updateFiles));
+                else
+                    File.WriteAllText(Path.GetFullPath(LibFile), JsonConvert.SerializeObject(hashSumFileDetails));
                 //File.WriteAllText(Path.GetFullPath(LibFile), hashSumFileDetails.ToString());
             }
             catch (Exception ex)
@@ -849,13 +862,35 @@ namespace Launcher_NewVersion
             try
             {
                 //this.json = this.FetchHashSum();
+                this.json = Utils.DownloadFromMultipleUris(HashSumUri);
 
-                string filePath = "C:\\Users\\Lenovo\\Downloads\\hashsum.json";
-                string json = File.ReadAllText(filePath);
-                this.json = JObject.Parse(json);
+                //for local testing
+                //string filePath = "C:\\Users\\Lenovo\\Downloads\\hashsum.json";
+                //string json = File.ReadAllText(filePath);
+                //this.json = JObject.Parse(json);
+                
                 if (this.json != null)
                 {
-                    this.clientFiles = this.json["data"].ToObject<JObject>();
+                    this.clientFiles = this.json[HashSumFileValue.Data].ToObject<JObject>();
+
+                    // Get the fastest mirror uri
+                    //var mirrors = this.json[HashSumFileValue.Mirrors].ToObject<List<Mirror>>();
+                    var mirrors = new List<Mirror>
+                    {
+                        new Mirror
+                        {
+                            Id = "Bellatrix", 
+                            TestFile = "https://s3-hcm5-r1.longvan.net/19425436-lvpqiaf/testfile"
+                        },
+                        new Mirror
+                        {
+                            Id = "Menkalinan",
+                            TestFile = "https://hn.ss.bfcplatform.vn/dovn/testfile"
+                        }
+                    };
+                    var speedTestUris = mirrors.Select(mirror => mirror.TestFile).ToList();
+                    var fastestUri = speedTestUris.GetFastestLink();
+                    priorityMirror = mirrors.FirstOrDefault(mirror => mirror.TestFile == fastestUri).Id;
                 }
                 else
                 {
@@ -911,6 +946,8 @@ namespace Launcher_NewVersion
             else
                 ExtractFileHashSum(ref hashSumFileDetail, updateFiles);
         }
+
+
 
         private JObject FetchHashSum()
         {
