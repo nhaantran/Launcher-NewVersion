@@ -874,20 +874,20 @@ namespace Launcher_NewVersion
                     this.clientFiles = this.json[HashSumFileValue.Data].ToObject<JObject>();
 
                     // Get the fastest mirror uri
-                    //var mirrors = this.json[HashSumFileValue.Mirrors].ToObject<List<Mirror>>();
-                    var mirrors = new List<Mirror>
-                    {
-                        new Mirror
-                        {
-                            Id = "Bellatrix", 
-                            TestFile = "https://s3-hcm5-r1.longvan.net/19425436-lvpqiaf/testfile"
-                        },
-                        new Mirror
-                        {
-                            Id = "Menkalinan",
-                            TestFile = "https://hn.ss.bfcplatform.vn/dovn/testfile"
-                        }
-                    };
+                    var mirrors = this.json[HashSumFileValue.Mirrors].ToObject<List<Mirror>>();
+                    //var mirrors = new List<Mirror>
+                    //{
+                    //    new Mirror
+                    //    {
+                    //        Id = "Bellatrix", 
+                    //        TestFile = "https://s3-hcm5-r1.longvan.net/19425436-lvpqiaf/testfile"
+                    //    },
+                    //    new Mirror
+                    //    {
+                    //        Id = "Menkalinan",
+                    //        TestFile = "https://hn.ss.bfcplatform.vn/dovn/testfile"
+                    //    }
+                    //};
                     var speedTestUris = mirrors.Select(mirror => mirror.TestFile).ToList();
                     var fastestUri = speedTestUris.GetFastestLink();
                     priorityMirror = mirrors.FirstOrDefault(mirror => mirror.TestFile == fastestUri).Id;
