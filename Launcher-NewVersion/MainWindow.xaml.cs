@@ -27,8 +27,9 @@ namespace Launcher_NewVersion
             gameExe = Path.GetFullPath(@"Bin\Game.exe");
         }
 
-        //msbuild /p:TargetFramework=net35 /p:Configuration=Release /p:PublishSingleFile=true
-
+        /*
+          msbuild /p:TargetFramework=net35 /p:Configuration=Release /p:PublishSingleFile=true
+        */
         #region Configurable Varibles
         private static readonly double WIDTH = 1080f;
         private static readonly double HEIGHT = 740f;
@@ -132,6 +133,110 @@ namespace Launcher_NewVersion
         #endregion
 
         #region Methods
+
+        private void Window_ContentRendered(object sender, EventArgs e)
+        {
+            // for local testing
+            //var speedTestUrls = new List<string>
+            //()
+            //{
+            //  "https://s3-hcm5-r1.longvan.net/19425436-lvpqiaf/client/hashsum.json",
+            //    "https://hn.ss.bfcplatform.vn/dovn/client/hashsum.json"
+            //};
+            //speedTestUrls.GetFastestLink();
+
+            JObject configFile = Utils.ReadConfig();
+            Setup(configFile);
+            try
+            {
+                // Todo: Using dynamic controls generation
+                this.newsControls.Add(News1);
+                this.newsControls.Add(News2);
+                this.newsControls.Add(News3);
+                this.newsControls.Add(News4);
+                this.newsControls.Add(News5);
+                this.newsControls.Add(News6);
+                this.newsControls.Add(News7);
+                this.newsControls.Add(News8);
+                this.newsTime.Add(lbl1);
+                this.newsTime.Add(lbl2);
+                this.newsTime.Add(lbl3);
+                this.newsTime.Add(lbl4);
+                this.newsTime.Add(lbl5);
+                this.newsTime.Add(lbl6);
+                this.newsTime.Add(lbl7);
+                this.newsTime.Add(lbl8);
+
+                //Set default properties for controls
+                UpdateStatus_btn.IsEnabled = false;
+                UpdateStatus_btn.Opacity = 1;
+                Loading.Maximum = 100;
+                Loading_Copy.Maximum = 100;
+
+                //Fetching data from server in new thread
+                Thread wdr = new Thread(() =>
+                {
+                    bool check = false;
+                    do
+                    {
+                        try
+                        {
+                            if (news == null)
+                            {
+                                news = FetchNews();
+                                //Debug.WriteLine("Fetch news success");
+                                InitsNews();
+                                //Debug.WriteLine("Init news success");
+                            }
+                            check = true;
+                        }
+                        catch
+                        {
+
+                        }
+                    } while (!check);
+                });
+                wdr.Start();
+
+                ////Debug.WriteLine("Checking update");
+                bool _isRequireUpdate = false;
+                Status = LauncherStatus._verifying;
+                if (!File.Exists(Path.GetFullPath(LibFile)))
+                {
+                    _isRequireUpdate = true;
+                    fsHashSum = new FileStream(Path.GetFullPath(LibFile), FileMode.Create, FileAccess.ReadWrite);
+                    fsHashSum.Close();
+                }
+
+                _isRequireUpdate = this.IsRequireUpdate();
+                //Debug.WriteLine(_isRequireUpdate);
+                if (_isRequireUpdate)
+                {
+                    ////Debug.WriteLine("UPdate required");
+                    this.Update(true);
+                }
+                else
+                {
+                    //Debug.WriteLine("Done");
+                    Status = LauncherStatus.ready;
+                    Progress.Visibility = Visibility.Hidden;
+                    OneFileProgress.Visibility = Visibility.Hidden;
+                    FileName.Visibility = Visibility.Hidden;
+                    PlayGame.IsEnabled = true;
+                    if (!File.Exists(Path.GetFullPath(modeSavedFile)))
+                        File.Create(Path.GetFullPath(modeSavedFile)).Close();
+
+                    if (!File.Exists(Path.GetFullPath(ipSavedFile)))
+                        File.Create(Path.GetFullPath(ipSavedFile)).Close();
+                    File.WriteAllText(Path.GetFullPath(ipSavedFile), Utils.GetPublicIpAddress());
+                }
+
+            }
+            catch
+            {
+
+            }
+        }
 
         private JObject FetchNews()
         {
@@ -279,110 +384,6 @@ namespace Launcher_NewVersion
                 Debug.WriteLine($"IsRequireUpdate error: {ex}");
             }
             return true;
-        }
-
-        private void Window_ContentRendered(object sender, EventArgs e)
-        {
-            // for local testing
-            //var speedTestUrls = new List<string>
-            //()
-            //{
-            //  "https://s3-hcm5-r1.longvan.net/19425436-lvpqiaf/client/hashsum.json",
-            //    "https://hn.ss.bfcplatform.vn/dovn/client/hashsum.json"
-            //};
-            //speedTestUrls.GetFastestLink();
-
-            JObject configFile = Utils.ReadConfig();
-            Setup(configFile);
-            try
-            {
-                // Todo: Using dynamic controls generation
-                this.newsControls.Add(News1);
-                this.newsControls.Add(News2);
-                this.newsControls.Add(News3);
-                this.newsControls.Add(News4);
-                this.newsControls.Add(News5);
-                this.newsControls.Add(News6);
-                this.newsControls.Add(News7);
-                this.newsControls.Add(News8);
-                this.newsTime.Add(lbl1);
-                this.newsTime.Add(lbl2);
-                this.newsTime.Add(lbl3);
-                this.newsTime.Add(lbl4);
-                this.newsTime.Add(lbl5);
-                this.newsTime.Add(lbl6);
-                this.newsTime.Add(lbl7);
-                this.newsTime.Add(lbl8);
-
-                //Set default properties for controls
-                UpdateStatus_btn.IsEnabled = false;
-                UpdateStatus_btn.Opacity = 1;
-                Loading.Maximum = 100;
-                Loading_Copy.Maximum = 100;
-
-                //Fetching data from server in new thread
-                Thread wdr = new Thread(() =>
-                {
-                    bool check = false;
-                    do
-                    {
-                        try
-                        {
-                            if (news == null)
-                            {
-                                news = FetchNews();
-                                //Debug.WriteLine("Fetch news success");
-                                InitsNews();
-                                //Debug.WriteLine("Init news success");
-                            }
-                            check = true;
-                        }
-                        catch
-                        {
-                            
-                        }
-                    } while (!check);
-                });
-                wdr.Start();
-
-                ////Debug.WriteLine("Checking update");
-                bool _isRequireUpdate = false;
-                Status = LauncherStatus._verifying;
-                if (!File.Exists(Path.GetFullPath(LibFile)))
-                {
-                    _isRequireUpdate = true;
-                    fsHashSum = new FileStream(Path.GetFullPath(LibFile), FileMode.Create, FileAccess.ReadWrite);
-                    fsHashSum.Close();
-                }
-
-                _isRequireUpdate = this.IsRequireUpdate();
-                //Debug.WriteLine(_isRequireUpdate);
-                if (_isRequireUpdate)
-                {
-                    ////Debug.WriteLine("UPdate required");
-                    this.Update(true);
-                }
-                else
-                {
-                    //Debug.WriteLine("Done");
-                    Status = LauncherStatus.ready;
-                    Progress.Visibility = Visibility.Hidden;
-                    OneFileProgress.Visibility = Visibility.Hidden;
-                    FileName.Visibility = Visibility.Hidden;
-                    PlayGame.IsEnabled = true;
-                    if (!File.Exists(Path.GetFullPath(modeSavedFile)))
-                        File.Create(Path.GetFullPath(modeSavedFile)).Close();
-
-                    if (!File.Exists(Path.GetFullPath(ipSavedFile)))
-                        File.Create(Path.GetFullPath(ipSavedFile)).Close();
-                    File.WriteAllText(Path.GetFullPath(ipSavedFile), Utils.GetPublicIpAddress());
-                }
-
-            }
-            catch
-            {
-
-            }
         }
 
         private void Update(bool forceRecheck = false)
