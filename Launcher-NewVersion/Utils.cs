@@ -92,13 +92,21 @@ namespace Launcher_NewVersion
 
         public static void ExtractZipFile(string sourceFile, string destinationDirectory)
         {
-            using (ZipFile zip = ZipFile.Read(sourceFile))
+            try
             {
-                foreach (ZipEntry e in zip)
+                using (ZipFile zip = ZipFile.Read(sourceFile))
                 {
-                    e.Extract(destinationDirectory, ExtractExistingFileAction.OverwriteSilently);
+                    foreach (ZipEntry e in zip)
+                    {
+                        e.Extract(destinationDirectory, ExtractExistingFileAction.OverwriteSilently);
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in ExtractZipFile {ex}");
+            }
+            
         }
 
         public static JObject ReadConfig()
@@ -328,9 +336,12 @@ namespace Launcher_NewVersion
             return fastestUrl;
         }
 
-        public static JObject DownloadFromMultipleUris(List<string> uris)
+        public static JObject FetchFromMultipleUris(List<string> uris)
         {
-            WebClient wc = new WebClient();
+            WebClient wc = new WebClient
+            {
+                Encoding = System.Text.Encoding.UTF8
+            };
             JObject json = null;
             foreach (var uri in uris)
             {

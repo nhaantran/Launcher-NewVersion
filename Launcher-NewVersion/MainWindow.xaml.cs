@@ -134,71 +134,17 @@ namespace Launcher_NewVersion
 
         #region Methods
 
+
         private void Window_ContentRendered(object sender, EventArgs e)
         {
-            // for local testing
-            //var speedTestUrls = new List<string>
-            //()
-            //{
-            //  "https://s3-hcm5-r1.longvan.net/19425436-lvpqiaf/client/hashsum.json",
-            //    "https://hn.ss.bfcplatform.vn/dovn/client/hashsum.json"
-            //};
-            //speedTestUrls.GetFastestLink();
-
             JObject configFile = Utils.ReadConfig();
             Setup(configFile);
             try
             {
-                // Todo: Using dynamic controls generation
-                this.newsControls.Add(News1);
-                this.newsControls.Add(News2);
-                this.newsControls.Add(News3);
-                this.newsControls.Add(News4);
-                this.newsControls.Add(News5);
-                this.newsControls.Add(News6);
-                this.newsControls.Add(News7);
-                this.newsControls.Add(News8);
-                this.newsTime.Add(lbl1);
-                this.newsTime.Add(lbl2);
-                this.newsTime.Add(lbl3);
-                this.newsTime.Add(lbl4);
-                this.newsTime.Add(lbl5);
-                this.newsTime.Add(lbl6);
-                this.newsTime.Add(lbl7);
-                this.newsTime.Add(lbl8);
+                UsingDynamicControlsGeneration();
+                SetDefaultPropertiesForControls();
+                FetchingDataFromSeverInNewThread();
 
-                //Set default properties for controls
-                UpdateStatus_btn.IsEnabled = false;
-                UpdateStatus_btn.Opacity = 1;
-                Loading.Maximum = 100;
-                Loading_Copy.Maximum = 100;
-
-                //Fetching data from server in new thread
-                Thread wdr = new Thread(() =>
-                {
-                    bool check = false;
-                    do
-                    {
-                        try
-                        {
-                            if (news == null)
-                            {
-                                news = FetchNews();
-                                //Debug.WriteLine("Fetch news success");
-                                InitsNews();
-                                //Debug.WriteLine("Init news success");
-                            }
-                            check = true;
-                        }
-                        catch
-                        {
-
-                        }
-                    } while (!check);
-                });
-                wdr.Start();
-
-                ////Debug.WriteLine("Checking update");
                 bool _isRequireUpdate = false;
                 Status = LauncherStatus._verifying;
                 if (!File.Exists(Path.GetFullPath(LibFile)))
@@ -209,15 +155,13 @@ namespace Launcher_NewVersion
                 }
 
                 _isRequireUpdate = this.IsRequireUpdate();
-                //Debug.WriteLine(_isRequireUpdate);
+               
                 if (_isRequireUpdate)
                 {
-                    ////Debug.WriteLine("UPdate required");
                     this.Update(true);
                 }
                 else
                 {
-                    //Debug.WriteLine("Done");
                     Status = LauncherStatus.ready;
                     Progress.Visibility = Visibility.Hidden;
                     OneFileProgress.Visibility = Visibility.Hidden;
@@ -230,29 +174,64 @@ namespace Launcher_NewVersion
                         File.Create(Path.GetFullPath(ipSavedFile)).Close();
                     File.WriteAllText(Path.GetFullPath(ipSavedFile), Utils.GetPublicIpAddress());
                 }
-
             }
-            catch
+            catch (Exception ex)
             {
-
+                Debug.WriteLine($"Error in Window_ContentRendered: {ex}");
             }
         }
-
-        private JObject FetchNews()
+        private void UsingDynamicControlsGeneration()
         {
-            try
-            {
-                WebClient wc = new WebClient();
-                wc.Encoding = System.Text.Encoding.UTF8;
-                string newsData = wc.DownloadString(new Uri(newsUri));
-                return JObject.Parse(newsData);
-            }
-            catch
-            {
-                return null;
-            }
+            this.newsControls.Add(News1);
+            this.newsControls.Add(News2);
+            this.newsControls.Add(News3);
+            this.newsControls.Add(News4);
+            this.newsControls.Add(News5);
+            this.newsControls.Add(News6);
+            this.newsControls.Add(News7);
+            this.newsControls.Add(News8);
+
+            this.newsTime.Add(lbl1);
+            this.newsTime.Add(lbl2);
+            this.newsTime.Add(lbl3);
+            this.newsTime.Add(lbl4);
+            this.newsTime.Add(lbl5);
+            this.newsTime.Add(lbl6);
+            this.newsTime.Add(lbl7);
+            this.newsTime.Add(lbl8);
+        }
+        private void SetDefaultPropertiesForControls()
+        {
+            UpdateStatus_btn.IsEnabled = false;
+            UpdateStatus_btn.Opacity = 1;
+            Loading.Maximum = 100;
+            Loading_Copy.Maximum = 100;
         }
 
+        private void FetchingDataFromSeverInNewThread()
+        {
+            Thread wdr = new Thread(() =>
+            {
+                bool check = false;
+                do
+                {
+                    try
+                    {
+                        if (news == null)
+                        {
+                            news = Utils.FetchFromMultipleUris(new List<string>() { newsUri });
+                            InitsNews();
+                        }
+                        check = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error in FetchingDataFromSeverInNewThread: {ex}");
+                    }
+                } while (!check);
+            });
+            wdr.Start();
+        }
         private void Setup(JObject config)
         {
             this.newsUri = config["url"]["NewsUri"].ToString();
@@ -294,11 +273,10 @@ namespace Launcher_NewVersion
                     string title = news["data"]["news"][i]["post_title"].ToString();
                     string str_date = news["data"]["news"][i]["post_date"].ToString();
                     string[] date = str_date.Substring(0, 6).Split('/');
-                    //Debug.WriteLine(date[0] + "/" + date[1]);
-
+                    
                     //string id = news["data"]["news"][count]["id"].ToString();
                     string url = news["data"]["news"][i]["link"].ToString();
-                    //Debug.WriteLine(url);
+                    
 
                     Button newsControl = this.newsControls[i];
                     Button newsLabel = this.newsTime[i];
@@ -314,7 +292,7 @@ namespace Launcher_NewVersion
                             date[0] = "0" + date[0];
                         newsLabel.Content = "(" + date[1] + "/" + date[0] + ")";
                         var isUrl = Uri.IsWellFormedUriString(url, UriKind.RelativeOrAbsolute);
-                        //Debug.WriteLine(isUrl);
+                        
                         if (isUrl)
                         {
                             newsControl.IsEnabled = true;
@@ -337,7 +315,6 @@ namespace Launcher_NewVersion
             catch (Exception ex)
             {
                 Debug.WriteLine("Error in InitsNews: " + ex.ToString());
-
                 for (int i = 0; i < this.newsControls.Count; i++)
                 {
                     Button newsControl = this.newsControls[i];
@@ -359,7 +336,6 @@ namespace Launcher_NewVersion
                 if (File.Exists(versionFile))
                 {
                     localVersion = new Version(File.ReadAllText(versionFile));
-                    //Debug.WriteLine(localVersion.ToString());
                     Ver.Text = localVersion.ToString();
                 }
                 else
@@ -372,12 +348,10 @@ namespace Launcher_NewVersion
                 File.Delete(Path.GetFullPath("(version).hlzip"));
                 Version onlineVersion = new Version(File.ReadAllText(versionFile)); //Server verion
                 VerSer.Text = $"({onlineVersion})";
-                //Debug.WriteLine(onlineVersion.ToString());
                 if (onlineVersion.Equals(localVersion))
                 {
                     return false;
                 }
-                ////Debug.WriteLine(File.ReadAllText(Path.GetFullPath("(version)")));
             }
             catch (Exception ex)
             {
@@ -395,7 +369,7 @@ namespace Launcher_NewVersion
             Progress.Visibility = Visibility.Visible;
             Analyzing.Visibility = Visibility.Visible;
             PlayGame.IsEnabled = false;
-            //selectMode.IsEnabled = false;
+            
             PlayGame.Opacity = 0.7;
             FixClient.IsEnabled = false;
             FixClient.Opacity = 0.7;
@@ -422,10 +396,10 @@ namespace Launcher_NewVersion
                 }
             }
             this.AnalyzeRequiredFiles();
-            //Debug.WriteLine("Analyze");
+            
             this.isUpdating = true;
             this.Status = LauncherStatus.downloadingUpdate;
-            //Debug.WriteLine("Update");
+            
             Thread preVerifyThread = new Thread(() => { this.PreVerifyThread(); });
             preVerifyThread.Start();
 
@@ -486,13 +460,10 @@ namespace Launcher_NewVersion
                     OneFileProgress.Visibility = Visibility.Hidden;
                     FileName.Visibility = Visibility.Hidden;
                     PlayGame.IsEnabled = true;
-                    //selectMode.IsEnabled = true;
                     PlayGame.Opacity = 1;
                     FixClient.IsEnabled = true;
                     FixClient.Opacity = 1;
                     Ver.Text = json[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
-                    //setMode();
-                    ////Debug.WriteLine(selectMode.DataContext.ToString());
                 };
                 this.Dispatcher.Invoke(action);
                 if (fsHashSum != null)
@@ -505,7 +476,6 @@ namespace Launcher_NewVersion
 
         private void PreVerifyThread(bool forceRecheck = false)
         {
-            ////Debug.WriteLine("Start: Pre Verify Thread");
             try
             {
                 for (int i = 0; i < this.updateFiles.Count && this.isUpdating; i++)
@@ -537,20 +507,16 @@ namespace Launcher_NewVersion
                 this.Dispatcher.Invoke(action);
                 isFailed = true;
             }
-
-            ////Debug.WriteLine("Complete: Pre Verify Thread");
         }
 
         private void DownloadThread()
         {
-            ////Debug.WriteLine("Start: Download Thread");
             try
             {
                 int waitPoint = 0;
                 for (int i = 0; i < this.updateFiles.Count && this.isUpdating && !this.isFailed; i++)
                 {
                     var file = this.updateFiles[i];
-                    ////Debug.WriteLine("Downloading " + file["path"]);
                     //Waiting for state is preVerified
                     while (this.isUpdating)
                     {
@@ -594,9 +560,6 @@ namespace Launcher_NewVersion
                         .Where(downloadLinkDetail => downloadLinkDetail.Mirror == priorityMirror)
                         .Select(downloadLinkDetail => downloadLinkDetail.Url).FirstOrDefault();
                                         
-                    //if (!file[LibFileValue.DownloadLink].ToString().Equals(""))
-                    //    fileUri = (string)file[LibFileValue.DownloadLink][0];
-
                     DownLoadFile(downloadFilePath, localFilePath, fileUri);
                     if (!isFailed)
                     {
@@ -613,9 +576,6 @@ namespace Launcher_NewVersion
                         file[LibFileValue.State] = StateValue.failed.ToString();
                         break;
                     }
-
-                    ////Debug.WriteLine("Downloaded: " + file["path"]);
-                    //continue;
                 }
             }
             catch (Exception ex)
@@ -629,9 +589,7 @@ namespace Launcher_NewVersion
                 };
                 this.Dispatcher.Invoke(action);
                 MessageBox.Show("Lỗi đường truyền", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                //Debug.WriteLine("Download Thread error: " + ex.Message);
             }
-            ////Debug.WriteLine("Complete: Download Thread");
 
         }
 
@@ -661,9 +619,9 @@ namespace Launcher_NewVersion
                     Monitor.Wait(syncObject);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                //MessageBox.Show("Server is overloading!!");
+                Debug.WriteLine($"Error in DownLoadFile: {ex}");
                 this.isFailed = true;
             }
         }
@@ -679,7 +637,6 @@ namespace Launcher_NewVersion
         }
         private void Wc_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
         {
-            //Action action = () => { OneFileProgress.Content = e.ProgressPercentage.ToString() + "%";  };
             try
             {
                 string downloadSpeed = string.Format("{0} MB/s", (e.BytesReceived / 1024.0 / 1024.0 / stopwatch.Elapsed.TotalSeconds).ToString("0.00"));
@@ -688,7 +645,6 @@ namespace Launcher_NewVersion
                     Loading.Value = e.ProgressPercentage;
                 };
                 this.Dispatcher.Invoke(action);
-                //Debug.WriteLine("DownloadSpeed:" + downloadSpeed);
             }
             catch (Exception ex)
             {
@@ -698,13 +654,12 @@ namespace Launcher_NewVersion
 
         private void ExtractThread()
         {
-            ////Debug.WriteLine("Start: Extract Thread");
             try
             {
                 for (int i = 0; i < this.updateFiles.Count && this.isUpdating; i++)
                 {
                     var file = this.updateFiles[i];
-                    ////Debug.WriteLine("Extracting: " + file["path"]);
+                    
                     //Waiting for state is preVerified
                     while (this.isUpdating)
                     {
@@ -732,23 +687,6 @@ namespace Launcher_NewVersion
                     }
                     catch (Exception ex)
                     {
-                        //string[] filename = localFilePath.Split("/");
-                        //if (IsFileInUse(Path.GetFullPath(localFilePath)))
-                        //{
-                        //    MessageBoxResult mbr = MessageBox.Show("Please close " + filename[filename.Length - 1], "Error", MessageBoxButton.OKCancel, MessageBoxImage.Error);
-                        //    switch (mbr)
-                        //    {
-                        //        case MessageBoxResult.OK:
-                        //            Environment.Exit(0);
-                        //            break;
-                        //        case MessageBoxResult.Cancel:
-                        //            Environment.Exit(0);
-                        //            break;
-                        //        default:
-                        //            Environment.Exit(0);
-                        //            break;
-                        //    }
-                        //}
                         file[LibFileValue.State] = StateValue.failed.ToString();
                         File.Delete(downloadFilePath);
                         Debug.WriteLine(ex.ToString());
@@ -766,14 +704,12 @@ namespace Launcher_NewVersion
                         file[LibFileValue.State] = StateValue.failed.ToString();
                         this.Dispatcher.Invoke(new Action(() => { Status = LauncherStatus.failed; }));
                     }
-                    ////Debug.WriteLine("Extracted: " + file["path"]);
                 }
             }
             catch
             {
                 MessageBox.Show("Đã xảy ra lỗi! Nhấn Sửa lỗi để khắc phục!");
             }
-            ////Debug.WriteLine("Complete: Extract Thread");
         }
 
         private HashSumFileDetail CreateHashSumFileDetail(
@@ -850,7 +786,6 @@ namespace Launcher_NewVersion
                     File.WriteAllText(Path.GetFullPath(LibFile), JsonConvert.SerializeObject(updateFiles));
                 else
                     File.WriteAllText(Path.GetFullPath(LibFile), JsonConvert.SerializeObject(hashSumFileDetails));
-                //File.WriteAllText(Path.GetFullPath(LibFile), hashSumFileDetails.ToString());
             }
             catch (Exception ex)
             {
@@ -862,33 +797,14 @@ namespace Launcher_NewVersion
         {
             try
             {
-                //this.json = this.FetchHashSum();
-                this.json = Utils.DownloadFromMultipleUris(HashSumUri);
+                this.json = Utils.FetchFromMultipleUris(HashSumUri);
 
-                //for local testing
-                //string filePath = "C:\\Users\\Lenovo\\Downloads\\hashsum.json";
-                //string json = File.ReadAllText(filePath);
-                //this.json = JObject.Parse(json);
-                
                 if (this.json != null)
                 {
                     this.clientFiles = this.json[HashSumFileValue.Data].ToObject<JObject>();
 
                     // Get the fastest mirror uri
                     var mirrors = this.json[HashSumFileValue.Mirrors].ToObject<List<Mirror>>();
-                    //var mirrors = new List<Mirror>
-                    //{
-                    //    new Mirror
-                    //    {
-                    //        Id = "Bellatrix", 
-                    //        TestFile = "https://s3-hcm5-r1.longvan.net/19425436-lvpqiaf/testfile"
-                    //    },
-                    //    new Mirror
-                    //    {
-                    //        Id = "Menkalinan",
-                    //        TestFile = "https://hn.ss.bfcplatform.vn/dovn/testfile"
-                    //    }
-                    //};
                     var speedTestUris = mirrors.Select(mirror => mirror.TestFile).ToList();
                     var fastestUri = speedTestUris.GetFastestLink();
                     priorityMirror = mirrors.FirstOrDefault(mirror => mirror.TestFile == fastestUri).Id;
@@ -921,7 +837,6 @@ namespace Launcher_NewVersion
                         break;
                 }
             }
-            //JArray localFiles = new JArray();
             var hashSumFileDetail = new List<HashSumFileDetail>();
             bool isEmty = false;
             if (File.ReadAllText(Path.GetFullPath(LibFile)) == "")
@@ -935,7 +850,6 @@ namespace Launcher_NewVersion
                 {
                     var fileLibValue = File.ReadAllText(Path.GetFullPath(LibFile));
                     hashSumFileDetail = JsonConvert.DeserializeObject<List<HashSumFileDetail>>(fileLibValue);
-                    //localFiles = JArray.Parse(fileLibValue);
                 }
                 catch
                 {
@@ -947,81 +861,6 @@ namespace Launcher_NewVersion
             else
                 ExtractFileHashSum(ref hashSumFileDetail, updateFiles);
         }
-
-
-
-        private JObject FetchHashSum()
-        {
-            WebClient wc = new WebClient();
-            JObject json = null;
-            foreach (var uri in HashSumUri)
-            {
-                try
-                {
-                    string downloadfile = wc.DownloadString(new Uri(uri));
-                    json = JObject.Parse(downloadfile);
-                    break;
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine($"Error in FetchHashSum {uri}: {e}");
-                }
-            }
-            return json;
-        }
-
-        //private void setMode()
-        //{
-        //    try
-        //    {
-        //        if (!File.Exists(Path.GetFullPath(setting)))
-        //        {
-        //            Utils.DownloadFile(DownloadFileUri + @"Bin\Launcher\Setting.txt.hlzip", @"Bin\Launcher\Setting.txt.hlzip");
-        //            string path = Path.GetFullPath(@"Bin\Launcher\Setting.txt.hlzip");
-        //            Utils.Extract(path, path);
-        //            File.Delete(path);
-        //        }
-        //        names_path = File.ReadAllLines(Path.GetFullPath(setting));
-        //        names = new string[names_path.Length];
-        //        paths = new string[names_path.Length];
-        //        int index = 0;
-        //        foreach (string name in names_path)
-        //        {
-        //            string[] subname = name.Split(",");
-        //            names[index] = subname[0];
-        //            paths[index++] = subname[1];
-        //        }
-        //        ////Debug.WriteLine("names: " + names, "paths: " + paths);
-        //        List<string> selection = new List<string>();
-        //        for (int count = 0; count < names_path.Length; count++)
-        //            selection.Add(names[count]);
-        //        selectMode.ItemsSource = selection;
-        //        //selectMode.SelectedItem = selection[0]; 
-
-        //        if (!File.Exists(Path.GetFullPath(modeSavedFile)))
-        //            File.Create(Path.GetFullPath(modeSavedFile)).Close();
-        //        //FileStream modeFile = File.OpenRead(Path.GetFullPath(modeSavedFile));
-        //        var _modeIndex = "";
-        //        int modeIndex;
-        //        try
-        //        {
-        //            _modeIndex = File.ReadAllText(Path.GetFullPath(modeSavedFile));
-        //            modeIndex = _modeIndex == "" ? 0 : Int32.Parse(_modeIndex);
-        //            selectMode.SelectedItem = selection[modeIndex];
-        //        }
-        //        catch (Exception)
-        //        {
-        //            selectMode.SelectedItem = selection[0];
-        //            modeIndex = 0;
-        //        }
-        //        File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(@"Bin\" + "FairyResources.cfg"), true);
-        //        File.WriteAllText(Path.GetFullPath(modeSavedFile), selectMode.SelectedIndex.ToString());
-        //    }
-        //    catch (Exception ex)
-        //    {
-
-        //    }
-        //}
 
         private bool IsFileInUse(string path)
         {
@@ -1044,11 +883,11 @@ namespace Launcher_NewVersion
                     return false;
                 }
             }
-            catch (IOException)
+            catch (IOException ex)
             {
+                Debug.WriteLine($"IsFileInUse: File is in use {ex}");
                 return true;
             }
-
             return false;
         }
 
