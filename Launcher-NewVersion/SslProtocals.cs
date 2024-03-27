@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Security.Authentication;
 
 namespace Launcher_NewVersion
@@ -11,9 +12,11 @@ namespace Launcher_NewVersion
         private const SecurityProtocolType Tls10 = (SecurityProtocolType)_Tls10;
         private const SecurityProtocolType Tls12 = (SecurityProtocolType)_Tls12;
 
-        public static void SetUpSslProtocals()
+        public static void SetUpDefaultSslProtocals()
         {
-            ServicePointManager.SecurityProtocol = Tls10 | Tls12 ;
+            // WIN XP will not run this code
+            if(Environment.OSVersion.Version.Major >= 6)
+                ServicePointManager.SecurityProtocol = Tls10 | Tls12 ;
         }
     }
 }

@@ -7,12 +7,12 @@ using System.Security.Cryptography;
 using System.Windows;
 using Ionic.Zip;
 using System.Threading;
-using System.Windows.Documents;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Launcher_NewVersion
 {
-    static class Utils
+    public static class Utils
     {
         public static string CalculateMD5(string filename)
         {
@@ -130,135 +130,13 @@ namespace Launcher_NewVersion
             }
         }
 
-
-
-
-        //public class DownloadProgressTracker
-        //{
-        //    private long _totalFileSize;
-        //    private readonly int _sampleSize;
-        //    private readonly TimeSpan _valueDelay;
-
-        //    private DateTime _lastUpdateCalculated;
-        //    private long _previousProgress;
-
-        //    private double _cachedSpeed;
-
-        //    private Queue<Tuple<DateTime, long>> _changes = new Queue<Tuple<DateTime, long>>();
-
-        //    public DownloadProgressTracker(int sampleSize, TimeSpan valueDelay)
-        //    {
-        //        _lastUpdateCalculated = DateTime.Now;
-        //        _sampleSize = sampleSize;
-        //        _valueDelay = valueDelay;
-        //    }
-
-        //    public void NewFile()
-        //    {
-        //        _previousProgress = 0;
-        //    }
-
-        //    public void SetProgress(long bytesReceived, long totalBytesToReceive)
-        //    {
-        //        _totalFileSize = totalBytesToReceive;
-
-        //        long diff = bytesReceived - _previousProgress;
-        //        if (diff <= 0)
-        //            return;
-
-        //        _previousProgress = bytesReceived;
-
-        //        _changes.Enqueue(new Tuple<DateTime, long>(DateTime.Now, diff));
-        //        while (_changes.Count > _sampleSize)
-        //            _changes.Dequeue();
-        //    }
-
-        //    public double GetProgress()
-        //    {
-        //        return _previousProgress / (double)_totalFileSize;
-        //    }
-
-        //    public string GetProgressString()
-        //    {
-        //        return String.Format("{0:P0}", GetProgress());
-        //    }
-
-        //    public string GetBytesPerSecondString()
-        //    {
-        //        double speed = GetBytesPerSecond();
-        //        var prefix = new[] { "", "K", "M", "G" };
-
-        //        int index = 0;
-        //        while (speed > 1024 && index < prefix.Length - 1)
-        //        {
-        //            speed /= 1024;
-        //            index++;
-        //        }
-
-        //        int intLen = ((int)speed).ToString().Length;
-        //        int decimals = 3 - intLen;
-        //        if (decimals < 0)
-        //            decimals = 0;
-
-        //        string format = String.Format("{{0:F{0}}}", decimals) + "{1}B/s";
-
-        //        return String.Format(format, speed, prefix[index]);
-        //    }
-
-        //    public double GetBytesPerSecond()
-        //    {
-        //        try
-        //        {
-        //            if (DateTime.Now >= _lastUpdateCalculated + _valueDelay)
-        //            {
-        //                _lastUpdateCalculated = DateTime.Now;
-        //                _cachedSpeed = GetRateInternal();
-        //            }
-        //            return _cachedSpeed;
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            return 0;
-        //        }
-        //    }
-
-        //    private double GetRateInternal()
-        //    {
-        //        if (_changes.Count == 0)
-        //            return 0;
-        //        try
-        //        {
-        //            if(_changes.Last().Item1 != null && _changes.First().Item1 != null){
-        //                TimeSpan timespan = _changes.Last().Item1 - _changes.First().Item1;
-
-        //                long bytes = _changes.Sum(t => t.Item2);
-
-        //                double rate = bytes / timespan.TotalSeconds;
-
-        //                if (double.IsInfinity(rate) || double.IsNaN(rate))
-        //                    return 0;
-
-        //                return rate;
-        //            }
-        //            else
-        //                return 0;
-        //        }
-        //        catch
-        //        {
-        //            return 0;
-        //        }
-        //    }
-        //}
         public static void DownloadFile(string url, string filename, bool isFailed = false)
         {
             try
             {
                 filename = Path.GetFullPath(filename);
-                //Debug.WriteLine(filename);
-
-
                 string destinationDirectory = Path.GetDirectoryName(filename);
-                //Debug.WriteLine(destinationDirectory);
+                
                 if (!Directory.Exists(destinationDirectory))
                 {
                     Directory.CreateDirectory(destinationDirectory);
@@ -266,74 +144,79 @@ namespace Launcher_NewVersion
 
                 WebClient wc = new WebClient();
                 wc.DownloadFile(url, filename);
-                //Debug.WriteLine(isFailed);
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"Error in DownloadFile {ex}");
                 isFailed = true;
-                //Debug.WriteLine(isFailed);
             }
         }
 
-        public static string GetFastestLink(this List<string> urls)
+        public static string GetFastestLink(this List<string> uris)
         {
-            WebClient[] clients = new WebClient[urls.Count];
-            Stopwatch[] stopwatches = new Stopwatch[urls.Count];
-            ManualResetEvent[] doneEvents = new ManualResetEvent[urls.Count];
-
-            for (int i = 0; i < urls.Count; i++)
+            WebClient[] clients = new WebClient[uris.Count];
+            Stopwatch[] stopwatches = new Stopwatch[uris.Count];
+            ManualResetEvent[] doneEvents = new ManualResetEvent[uris.Count];
+            try
             {
-                clients[i] = new WebClient();
-                stopwatches[i] = new Stopwatch();
-                doneEvents[i] = new ManualResetEvent(false);
-
-                ThreadPool.QueueUserWorkItem(new WaitCallback((object state) =>
+                for (int i = 0; i < uris.Count; i++)
                 {
-                    int index = (int)state;
+                    clients[i] = new WebClient();
+                    stopwatches[i] = new Stopwatch();
+                    doneEvents[i] = new ManualResetEvent(false);
 
-                    stopwatches[index].Start();
-
-                    try
+                    ThreadPool.QueueUserWorkItem(new WaitCallback((object state) =>
                     {
-                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(urls[index]);   
-                        request.AddRange(0, 999); // This will download the first 1000 bytes
+                        int index = (int)state;
 
-                        using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-                        using (Stream responseStream = response.GetResponseStream())
+                        stopwatches[index].Start();
+
+                        try
                         {
-                            byte[] buffer = new byte[1000];
-                            responseStream.Read(buffer, 0, 1000);
+                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uris[index]);
+                            request.AddRange(0, 999); // This will download the first 1000 bytes
+
+                            using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                            using (Stream responseStream = response.GetResponseStream())
+                            {
+                                byte[] buffer = new byte[1000];
+                                responseStream.Read(buffer, 0, 1000);
+                            }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        // Handle exception
-                        Console.WriteLine($"Error downloading from {urls[index]}: {ex.Message}");
-                    }
-                    finally
-                    {
-                        stopwatches[index].Stop();
-                        doneEvents[index].Set();
-                    }
-                }), i);
-            }
-
-            foreach (var e in doneEvents)
-                e.WaitOne();
-            
-            string fastestUrl = string.Empty;
-            TimeSpan fastestTime = TimeSpan.MaxValue;
-
-            for (int i = 0; i < urls.Count; i++)
-            {
-                if (stopwatches[i].Elapsed < fastestTime)
-                {
-                    fastestTime = stopwatches[i].Elapsed;
-                    fastestUrl = urls[i];
+                        catch (Exception ex)
+                        {
+                            // Handle exception
+                            Console.WriteLine($"Error downloading from {uris[index]}: {ex.Message}");
+                        }
+                        finally
+                        {
+                            stopwatches[index].Stop();
+                            doneEvents[index].Set();
+                        }
+                    }), i);
                 }
-            }
 
-            return fastestUrl;
+                foreach (var e in doneEvents)
+                    e.WaitOne();
+
+                string fastestUrl = string.Empty;
+                TimeSpan fastestTime = TimeSpan.MaxValue;
+
+                for (int i = 0; i < uris.Count; i++)
+                {
+                    if (stopwatches[i].Elapsed < fastestTime)
+                    {
+                        fastestTime = stopwatches[i].Elapsed;
+                        fastestUrl = uris[i];
+                    }
+                }
+                return fastestUrl;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in GetFastestLink {ex}");
+                return uris.FirstOrDefault();
+            }            
         }
 
         public static JObject FetchFromMultipleUris(List<string> uris)
@@ -351,9 +234,9 @@ namespace Launcher_NewVersion
                     json = JObject.Parse(downloadfile);
                     break;
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Debug.WriteLine($"Error in DownloadFromMultipleUris {uri}: {e}");
+                    Debug.WriteLine($"Error in FetchFromMultipleUris {uri}: {ex}");
                 }
             }
             return json;
