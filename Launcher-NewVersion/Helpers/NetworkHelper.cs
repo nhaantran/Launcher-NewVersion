@@ -1,44 +1,26 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
-using System.Security.Cryptography;
-using System.Windows;
-using Ionic.Zip;
-using System.Threading;
-using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Windows;
 
-namespace Launcher_NewVersion
+namespace Launcher.Helpers
 {
-    public static class Utils
+    public static class NetworkHelper
     {
-        public static string CalculateMD5(string filename)
+        public static void OpenLink(string url)
         {
             try
             {
-                using (var md5 = MD5.Create())
+                var psi = new ProcessStartInfo
                 {
-                    using (var stream = File.OpenRead(filename))
-                    {
-                        var hash = md5.ComputeHash(stream);
-                        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                    }
-                }
-            }
-            catch
-            {
-                return null;
-            }
-        }
-        public static void openLink(string url)
-        {
-            try
-            {
-                var psi = new ProcessStartInfo();
-                psi.UseShellExecute = true;
-                psi.FileName = url;
+                    UseShellExecute = true,
+                    FileName = url
+                };
                 Process.Start(psi);
             }
             catch (Exception ex)
@@ -70,73 +52,13 @@ namespace Launcher_NewVersion
 
             return publicIPAddress.Replace("\n", "");
         }
-
-        public static void Extract(string sourceFile, string destinationDirectory)
-        {
-            sourceFile = Path.GetFullPath(sourceFile);
-            destinationDirectory = Path.GetFullPath(destinationDirectory);
-
-            if (!File.Exists(sourceFile))
-            {
-                return;
-            }
-
-            destinationDirectory = Path.GetDirectoryName(destinationDirectory);
-
-            if (!Directory.Exists(destinationDirectory))
-            {
-                Directory.CreateDirectory(destinationDirectory);
-            }
-            ExtractZipFile(sourceFile, destinationDirectory);
-        }
-
-        public static void ExtractZipFile(string sourceFile, string destinationDirectory)
-        {
-            try
-            {
-                using (ZipFile zip = ZipFile.Read(sourceFile))
-                {
-                    foreach (ZipEntry e in zip)
-                    {
-                        e.Extract(destinationDirectory, ExtractExistingFileAction.OverwriteSilently);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in ExtractZipFile {ex}");
-            }
-            
-        }
-
-        public static JObject ReadConfig()
-        {
-            try
-            {
-                string configFilePath = Path.GetFullPath("launcher.json");
-                JObject configFile = JObject.Parse(File.ReadAllText(configFilePath));
-
-                if (configFile == null)
-                    throw new Exception("Can not find config file");
-
-                return configFile;
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString(), "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
-                Environment.Exit(0);
-                return null;
-            }
-        }
-
         public static void DownloadFile(string url, string filename, bool isFailed = false)
         {
             try
             {
                 filename = Path.GetFullPath(filename);
                 string destinationDirectory = Path.GetDirectoryName(filename);
-                
+
                 if (!Directory.Exists(destinationDirectory))
                 {
                     Directory.CreateDirectory(destinationDirectory);
@@ -216,7 +138,7 @@ namespace Launcher_NewVersion
             {
                 Debug.WriteLine($"Error in GetFastestLink {ex}");
                 return uris.FirstOrDefault();
-            }            
+            }
         }
 
         public static JObject FetchFromMultipleUris(List<string> uris)

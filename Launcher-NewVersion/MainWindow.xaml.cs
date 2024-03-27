@@ -1,4 +1,5 @@
 ﻿using Launcher;
+using Launcher.Helpers;
 using Launcher.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -24,7 +25,7 @@ namespace Launcher_NewVersion
         {
             InitializeComponent();
             versionFile = Path.GetFullPath(HashSumFileValue.VersionKey);
-            gameExe = Path.GetFullPath(@"Bin\Game.exe");
+            gameExe = Path.GetFullPath(Settings.GameExePath);
         }
 
         /*
@@ -137,7 +138,7 @@ namespace Launcher_NewVersion
 
         private void Window_ContentRendered(object sender, EventArgs e)
         {
-            JObject configFile = Utils.ReadConfig();
+            JObject configFile = ConfigHelper.ReadConfig();
             Setup(configFile);
             try
             {
@@ -172,7 +173,7 @@ namespace Launcher_NewVersion
 
                     if (!File.Exists(Path.GetFullPath(ipSavedFile)))
                         File.Create(Path.GetFullPath(ipSavedFile)).Close();
-                    File.WriteAllText(Path.GetFullPath(ipSavedFile), Utils.GetPublicIpAddress());
+                    File.WriteAllText(Path.GetFullPath(ipSavedFile), NetworkHelper.GetPublicIpAddress());
                 }
             }
             catch (Exception ex)
@@ -219,7 +220,7 @@ namespace Launcher_NewVersion
                     {
                         if (news == null)
                         {
-                            news = Utils.FetchFromMultipleUris(new List<string>() { newsUri });
+                            news = NetworkHelper.FetchFromMultipleUris(new List<string>() { newsUri });
                             InitsNews();
                         }
                         check = true;
@@ -248,9 +249,9 @@ namespace Launcher_NewVersion
             try
             {
                 string loginServer = @"Patch\LoginServer.txt.hlzip";
-                Utils.DownloadFile(DownloadFileUri + "Patch/LoginServer.txt.hlzip", "Patch/LoginServer.txt.hlzip");
+                NetworkHelper.DownloadFile(DownloadFileUri + "Patch/LoginServer.txt.hlzip", "Patch/LoginServer.txt.hlzip");
                 string path = Path.GetFullPath(loginServer);
-                Utils.Extract(path, path);
+                ExtensionHelper.Extract(path, path);
                 File.Delete(path);
             }
             catch (Exception ex)
@@ -343,8 +344,8 @@ namespace Launcher_NewVersion
                     localVersion = Version.zero;
                     Ver.Text = localVersion.ToString();
                 }
-                Utils.DownloadFile(DownloadFileUri + @"(version).hlzip", "(version).hlzip");
-                Utils.Extract(Path.GetFullPath("(version).hlzip"), Path.GetFullPath("(version).hlzip"));
+                NetworkHelper.DownloadFile(DownloadFileUri + @"(version).hlzip", "(version).hlzip");
+                ExtensionHelper.Extract(Path.GetFullPath("(version).hlzip"), Path.GetFullPath("(version).hlzip"));
                 File.Delete(Path.GetFullPath("(version).hlzip"));
                 Version onlineVersion = new Version(File.ReadAllText(versionFile)); //Server verion
                 VerSer.Text = $"({onlineVersion})";
@@ -489,7 +490,7 @@ namespace Launcher_NewVersion
                     string hash;
                     if (File.Exists(Path.GetFullPath(filePath)))
                     {
-                        hash = Utils.CalculateMD5(filePath);
+                        hash = DecryptHelper.CalculateMD5(filePath);
                         if (hash == file[LibFileValue.Hash].ToString())
                         {
                             file[LibFileValue.State] = StateValue.done.ToString();
@@ -552,8 +553,8 @@ namespace Launcher_NewVersion
                     this.Dispatcher.Invoke(action);
                     //Download file
                     string localFilePath = file[LibFileValue.Path].ToString();
-                    string downloadFilePath = file[LibFileValue.Path].ToString() + ".hlzip";
-                    string fileUri = DownloadFileUri + file[LibFileValue.Path].ToString() + ".hlzip";
+                    string downloadFilePath = file[LibFileValue.Path].ToString() + EnumHelper.GetDescription(FileExtentions.HlZip);
+                    string fileUri = DownloadFileUri + file[LibFileValue.Path].ToString() + EnumHelper.GetDescription(FileExtentions.HlZip);
 
                     var downloadLinkDetails = file[LibFileValue.DownloadLink].ToObject<List<DownloadLinkDetail>>();
                     fileUri = downloadLinkDetails
@@ -677,11 +678,11 @@ namespace Launcher_NewVersion
 
                     //Extract file
                     string localFilePath = file[LibFileValue.Path].ToString();
-                    string downloadFilePath = file[LibFileValue.Path].ToString() + ".hlzip";
+                    string downloadFilePath = file[LibFileValue.Path].ToString() + FileExtentions.HlZip;
                     bool _isExtracting = true;
                     try
                     {
-                        Utils.Extract(downloadFilePath, downloadFilePath);
+                        ExtensionHelper.Extract(downloadFilePath, downloadFilePath);
                         File.Delete(downloadFilePath);
                         _isExtracting = false;
                     }
@@ -797,7 +798,7 @@ namespace Launcher_NewVersion
         {
             try
             {
-                this.json = Utils.FetchFromMultipleUris(HashSumUri);
+                this.json = NetworkHelper.FetchFromMultipleUris(HashSumUri);
 
                 if (this.json != null)
                 {

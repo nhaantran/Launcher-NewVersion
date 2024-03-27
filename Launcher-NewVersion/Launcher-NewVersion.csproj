@@ -59,6 +59,7 @@
       <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net35\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
@@ -73,15 +74,21 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Helpers\ConfigHelper.cs" />
+    <Compile Include="Helpers\DecryptHelper.cs" />
+    <Compile Include="Helpers\EnumHelper.cs" />
+    <Compile Include="Helpers\NetworkHelper.cs" />
+    <Compile Include="Helpers\ExtensionHelper.cs" />
+    <Compile Include="Models\FileExtentions.cs" />
     <Compile Include="Models\HashSumFileValue.cs" />
     <Compile Include="Models\DownloadLinkDetail.cs" />
     <Compile Include="Models\HashSumFileDetail.cs" />
     <Compile Include="Models\LibFileValue.cs" />
     <Compile Include="Models\Mirror.cs" />
     <Compile Include="Models\StateValue.cs" />
-    <Compile Include="SslProtocals.cs" />
-    <Compile Include="Utils.cs" />
-    <Compile Include="Version.cs" />
+    <Compile Include="Models\Settings.cs" />
+    <Compile Include="Helpers\SslProtocals.cs" />
+    <Compile Include="Helpers\Version.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -90,7 +97,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="LauncherStatus.cs" />
+    <Compile Include="Models\LauncherStatus.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -117,6 +124,7 @@
     <Resource Include="Fonts\BreeSerif.otf" />
     <Resource Include="Fonts\Myriad Arabic Regular.ttf" />
     <Resource Include="Fonts\UTM A&amp;S Signwriter.ttf" />
+    <None Include="App.config" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
