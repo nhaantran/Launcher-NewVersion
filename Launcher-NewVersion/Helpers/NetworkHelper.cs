@@ -107,6 +107,11 @@ namespace Launcher.Helpers
             }
         }
 
+        /// <summary>
+        /// Calculate the fastest link to download from a list of links
+        /// </summary>
+        /// <param name="uris">list of links</param>
+        /// <returns>string</returns>
         public static string GetFastestLink(this List<string> uris)
         {
             WebClient[] clients = new WebClient[uris.Count];
@@ -175,6 +180,12 @@ namespace Launcher.Helpers
             }
         }
 
+        /// <summary>
+        /// Fetch data from multiple URIs
+        /// </summary>
+        /// <param name="uris">list of links</param>
+        /// <param name="encoding">type of encoding for WebClient</param>
+        /// <returns>JSON Object</returns>
         public static JObject FetchDataFromMultipleUris(this List<string> uris, Encoding encoding)
         {
             WebClient wc = new WebClient

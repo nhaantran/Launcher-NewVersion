@@ -21,5 +21,8 @@ namespace Launcher.Models
 
         [Description("Quá trình chuẩn bị data thất bại!!! Vui lòng thử lại sau.")]
         PrepareDataFailed,
+
+        [Description("Không tìm thấy file config!!!")]
+        ConfigFileNotFound,
     }
 }

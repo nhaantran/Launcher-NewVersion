@@ -13,6 +13,8 @@ namespace Launcher
         public readonly static string LibFile = _setting["LibFile"];
         public readonly static string GameFilePath = _setting["GameFilePath"];
         public readonly static string LoginServerFile = _setting["LoginServerFile"];
-        public readonly static string VersionFile = _setting["VersionFile"];      
+        public readonly static string VersionFile = _setting["VersionFile"];
+        public readonly static string ConfigFile = _setting["ConfigFile"];
+        
     }
 }
