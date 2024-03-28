@@ -8,7 +8,7 @@ namespace Launcher.Helpers
 {
     public static class ExtensionHelper
     {
-        public static void Extract(string sourceFile, string destinationDirectory, FileExtentions extension)
+        public static void Extract(this FileExtentions extension, string sourceFile, string destinationDirectory)
         {
             sourceFile = Path.GetFullPath(sourceFile);
             destinationDirectory = Path.GetFullPath(destinationDirectory);

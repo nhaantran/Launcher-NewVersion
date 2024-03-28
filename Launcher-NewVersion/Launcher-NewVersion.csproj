@@ -83,7 +83,9 @@
     <Compile Include="Models\HashSumFileValue.cs" />
     <Compile Include="Models\DownloadLinkDetail.cs" />
     <Compile Include="Models\HashSumFileDetail.cs" />
+    <Compile Include="Models\LauncherFileValue.cs" />
     <Compile Include="Models\LibFileValue.cs" />
+    <Compile Include="Models\MessageBoxContent.cs" />
     <Compile Include="Models\Mirror.cs" />
     <Compile Include="Models\StateValue.cs" />
     <Compile Include="Models\Settings.cs" />

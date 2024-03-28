@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Windows;
 
@@ -52,7 +53,7 @@ namespace Launcher.Helpers
 
             return publicIPAddress.Replace("\n", "");
         }
-        public static void DownloadFile(string url, string filename, bool isFailed = false)
+        public static void DownloadFile(string url, string filename)
         {
             try
             {
@@ -70,7 +71,39 @@ namespace Launcher.Helpers
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error in DownloadFile {ex}");
-                isFailed = true;
+            }
+        }
+        public static void DownloadFileFromMultipleUrls(this List<string> baseUrls, string path, string fileName)
+        {
+            try
+            {
+                fileName = Path.GetFullPath(fileName);
+                string destinationDirectory = Path.GetDirectoryName(fileName);
+
+                if (!Directory.Exists(destinationDirectory))
+                {
+                    Directory.CreateDirectory(destinationDirectory);
+                }
+                WebClient wc = new WebClient();
+                foreach (var url in baseUrls)
+                {
+                    try
+                    {
+                        var fullPath = url + path;
+                        wc.DownloadFile(fullPath, fileName);
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error in DownloadFileFromMultipleUrls {ex}");
+                        if(url == baseUrls.Last()) throw;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in DownloadFileFromMultipleUrls {ex}");
+                throw;
             }
         }
 
@@ -109,6 +142,7 @@ namespace Launcher.Helpers
                         {
                             // Handle exception
                             Console.WriteLine($"Error downloading from {uris[index]}: {ex.Message}");
+                            throw;
                         }
                         finally
                         {
@@ -141,11 +175,11 @@ namespace Launcher.Helpers
             }
         }
 
-        public static JObject FetchFromMultipleUris(List<string> uris)
+        public static JObject FetchDataFromMultipleUris(this List<string> uris, Encoding encoding)
         {
             WebClient wc = new WebClient
             {
-                Encoding = System.Text.Encoding.UTF8
+                Encoding = encoding
             };
             JObject json = null;
             foreach (var uri in uris)
@@ -159,6 +193,7 @@ namespace Launcher.Helpers
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"Error in FetchFromMultipleUris {uri}: {ex}");
+                    if (uri == uris.Last()) throw;
                 }
             }
             return json;

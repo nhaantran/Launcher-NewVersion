@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -29,20 +30,22 @@ namespace Launcher_NewVersion
         }
 
         /*
+         * For publish purpose
+         * OPEN TERMINAL IN PROJECT FOLDER
+         * USE THIS COMMAND TO PUBLISH
           msbuild /p:TargetFramework=net35 /p:Configuration=Release /p:PublishSingleFile=true
         */
         #region Configurable Varibles
         private static readonly double WIDTH = 1080f;
         private static readonly double HEIGHT = 740f;
-        private string newsUri = null;
+        private List<string> newsUri = null;
         private List<string> HashSumUri = null;
-        private string DownloadFileUri = null;
+        private List<string> DownloadFileUri = null;
         private string HOME_URL = null;
         private string REGISTER_URL = null;
         private string RECHARGE_URL = null;
         private string FANPAGE_URL = null;
         private string GROUP_URL = null;
-        private string NEWBIE_URL = null;
         private string MORE_URL = null;
 
         //Hash sum
@@ -51,22 +54,13 @@ namespace Launcher_NewVersion
         //Download file from server
         private string versionFile;
         private string gameExe;
-        private JObject json = null;
-        private JObject clientFiles;
+        private JObject hashSumData = null;
+        private JObject clientFiles = new JObject();
         private string priorityMirror;
         protected bool isFailed = false;
 
-        private List<string> bannersDatacontext = new List<string>();
-        private int maxBanners = 6;
         protected string localBannerDir = "Banner";
-        protected string setting = @"Bin\Launcher\Setting.txt";
-        private string ipSavedFile = @"Bin\Launcher\Save.txt";
-        private string modeSavedFile = @"Bin\mode.cfig";
-        private string LibFile = "Lib.txt";
-        private string GameFilePath = "Bin/OgreMain.dll";
-        string[] names_path;
-        string[] names;
-        string[] paths;
+        
         // As global variables
         private JObject news = null;
         private List<Button> newsControls = new List<Button>();
@@ -134,8 +128,6 @@ namespace Launcher_NewVersion
         #endregion
 
         #region Methods
-
-
         private void Window_ContentRendered(object sender, EventArgs e)
         {
             JObject configFile = ConfigHelper.ReadConfig();
@@ -148,10 +140,10 @@ namespace Launcher_NewVersion
 
                 bool _isRequireUpdate = false;
                 Status = LauncherStatus._verifying;
-                if (!File.Exists(Path.GetFullPath(LibFile)))
+                if (!File.Exists(Path.GetFullPath(Settings.LibFile)))
                 {
                     _isRequireUpdate = true;
-                    fsHashSum = new FileStream(Path.GetFullPath(LibFile), FileMode.Create, FileAccess.ReadWrite);
+                    fsHashSum = new FileStream(Path.GetFullPath(Settings.LibFile), FileMode.Create, FileAccess.ReadWrite);
                     fsHashSum.Close();
                 }
 
@@ -168,12 +160,12 @@ namespace Launcher_NewVersion
                     OneFileProgress.Visibility = Visibility.Hidden;
                     FileName.Visibility = Visibility.Hidden;
                     PlayGame.IsEnabled = true;
-                    if (!File.Exists(Path.GetFullPath(modeSavedFile)))
-                        File.Create(Path.GetFullPath(modeSavedFile)).Close();
+                    if (!File.Exists(Path.GetFullPath(Settings.ModeSavedFile)))
+                        File.Create(Path.GetFullPath(Settings.ModeSavedFile)).Close();
 
-                    if (!File.Exists(Path.GetFullPath(ipSavedFile)))
-                        File.Create(Path.GetFullPath(ipSavedFile)).Close();
-                    File.WriteAllText(Path.GetFullPath(ipSavedFile), NetworkHelper.GetPublicIpAddress());
+                    if (!File.Exists(Path.GetFullPath(Settings.IPSavedFile)))
+                        File.Create(Path.GetFullPath(Settings.IPSavedFile)).Close();
+                    File.WriteAllText(Path.GetFullPath(Settings.IPSavedFile), NetworkHelper.GetPublicIpAddress());
                 }
             }
             catch (Exception ex)
@@ -213,6 +205,8 @@ namespace Launcher_NewVersion
         {
             Thread wdr = new Thread(() =>
             {
+                var numOfRetries = 0;
+                var maxRetries = 3;
                 bool check = false;
                 do
                 {
@@ -220,43 +214,49 @@ namespace Launcher_NewVersion
                     {
                         if (news == null)
                         {
-                            news = NetworkHelper.FetchFromMultipleUris(new List<string>() { newsUri });
+                            news = newsUri.FetchDataFromMultipleUris(Encoding.UTF8);
                             InitsNews();
                         }
                         check = true;
                     }
                     catch (Exception ex)
                     {
+                        numOfRetries++;
+                        if(numOfRetries == maxRetries)
+                        {
+                            MessageBox.Show($"{MessageBoxContent.GetServerDataFailed.GetDescription()}" +
+                                $"\n News sẽ không xuất hiện", "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
                         Debug.WriteLine($"Error in FetchingDataFromSeverInNewThread: {ex}");
                     }
-                } while (!check);
+                } while (!check || numOfRetries < maxRetries);
             });
             wdr.Start();
         }
         private void Setup(JObject config)
         {
-            this.newsUri = config["url"]["NewsUri"].ToString();
-            this.HashSumUri = config["url"]["HashSumUri"].ToObject<List<string>>();
-            this.DownloadFileUri = config["url"]["DownloadFileUri"].ToString();
-            this.HOME_URL = config["url"]["HOME_URL"].ToString();
-            this.REGISTER_URL = config["url"]["REGISTER_URL"].ToString();
-            this.RECHARGE_URL = config["url"]["RECHARGE_URL"].ToString();
-            this.FANPAGE_URL = config["url"]["FANPAGE_URL"].ToString();
-            this.GROUP_URL = config["url"]["GROUP_URL"].ToString();
-            this.NEWBIE_URL = config["url"]["NEWBIE_URL"].ToString();
-            this.MORE_URL = config["url"]["MORE_URL"].ToString();
-
             try
             {
-                string loginServer = @"Patch\LoginServer.txt.hlzip";
-                NetworkHelper.DownloadFile(DownloadFileUri + "Patch/LoginServer.txt.hlzip", "Patch/LoginServer.txt.hlzip");
-                string path = Path.GetFullPath(loginServer);
-                ExtensionHelper.Extract(path, path);
+                var url = config[LauncherFileValue.url];
+                this.newsUri = url[LauncherFileValue.NewsUri].ToObject<List<string>>();
+                this.HashSumUri = url[LauncherFileValue.HashSumUri].ToObject<List<string>>();
+                this.DownloadFileUri = url[LauncherFileValue.DownloadFileUri].ToObject<List<string>>();
+                this.HOME_URL = url[LauncherFileValue.HOME_URL].ToString();
+                this.REGISTER_URL = url[LauncherFileValue.REGISTER_URL].ToString();
+                this.RECHARGE_URL = url[LauncherFileValue.RECHARGE_URL].ToString();
+                this.FANPAGE_URL = url[LauncherFileValue.FANPAGE_URL].ToString();
+                this.GROUP_URL = url[LauncherFileValue.GROUP_URL].ToString();
+                this.MORE_URL = url[LauncherFileValue.MORE_URL].ToString();
+
+                DownloadFileUri.DownloadFileFromMultipleUrls(Settings.LoginServerFile, Settings.LoginServerFile);
+                string path = Path.GetFullPath(Settings.LoginServerFile);
+                FileExtentions.HlZip.Extract(path, path);
                 File.Delete(path);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Set up failed: " + ex.ToString(), "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error in Setup: {ex}");
+                MessageBox.Show($"{MessageBoxContent.PrepareDataFailed.GetDescription()}", "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 Environment.Exit(1);
             }
 
@@ -344,9 +344,9 @@ namespace Launcher_NewVersion
                     localVersion = Version.zero;
                     Ver.Text = localVersion.ToString();
                 }
-                NetworkHelper.DownloadFile(DownloadFileUri + @"(version).hlzip", "(version).hlzip");
-                ExtensionHelper.Extract(Path.GetFullPath("(version).hlzip"), Path.GetFullPath("(version).hlzip"));
-                File.Delete(Path.GetFullPath("(version).hlzip"));
+                DownloadFileUri.DownloadFileFromMultipleUrls(Settings.VersionFile, Settings.VersionFile);
+                FileExtentions.HlZip.Extract(Path.GetFullPath(Settings.VersionFile), Path.GetFullPath(Settings.VersionFile));
+                File.Delete(Path.GetFullPath(Settings.VersionFile));
                 Version onlineVersion = new Version(File.ReadAllText(versionFile)); //Server verion
                 VerSer.Text = $"({onlineVersion})";
                 if (onlineVersion.Equals(localVersion))
@@ -356,6 +356,8 @@ namespace Launcher_NewVersion
             }
             catch (Exception ex)
             {
+                MessageBox.Show($"{MessageBoxContent.ErrorWhileDownloading.GetDescription()}" ,"TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                VerSer.Text = $"(Không thể kết nối với máy chủ)";
                 Debug.WriteLine($"IsRequireUpdate error: {ex}");
             }
             return true;
@@ -380,7 +382,7 @@ namespace Launcher_NewVersion
                 bool isFileinUse = IsFileInUse(gameExe);
                 if (isFileinUse)
                 {
-                    MessageBoxResult mbr = MessageBox.Show("Hãy tắt trò chơi", "Error", MessageBoxButton.OKCancel, MessageBoxImage.Error);
+                    MessageBoxResult mbr = MessageBox.Show(MessageBoxContent.TurnOffGame.GetDescription(), "Error", MessageBoxButton.OKCancel, MessageBoxImage.Error);
                     switch (mbr)
                     {
                         case MessageBoxResult.OK:
@@ -396,7 +398,8 @@ namespace Launcher_NewVersion
                     }
                 }
             }
-            this.AnalyzeRequiredFiles();
+
+            AnalyzeRequiredFiles();
             
             this.isUpdating = true;
             this.Status = LauncherStatus.downloadingUpdate;
@@ -440,14 +443,14 @@ namespace Launcher_NewVersion
 
                 if (completed == total)
                 {
-                    File.WriteAllText(Path.GetFullPath(HashSumFileValue.VersionKey), json[HashSumFileValue.Data][HashSumFileValue.Version].ToString());
-                    File.WriteAllText(Path.GetFullPath(LibFile), this.updateFiles.ToString());
+                    File.WriteAllText(Path.GetFullPath(HashSumFileValue.VersionKey), hashSumData[HashSumFileValue.Data][HashSumFileValue.Version].ToString());
+                    File.WriteAllText(Path.GetFullPath(Settings.LibFile), this.updateFiles.ToString());
                     Thread.Sleep(2000);
                 }
 
                 if (isFailed)
                 {
-                    MessageBox.Show("Có lỗi xảy ra trong quá trình tải!", "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(MessageBoxContent.ErrorWhileDownloading.GetDescription(), "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 Action action = () =>
                 {
@@ -464,7 +467,7 @@ namespace Launcher_NewVersion
                     PlayGame.Opacity = 1;
                     FixClient.IsEnabled = true;
                     FixClient.Opacity = 1;
-                    Ver.Text = json[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
+                    Ver.Text = hashSumData[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
                 };
                 this.Dispatcher.Invoke(action);
                 if (fsHashSum != null)
@@ -500,7 +503,7 @@ namespace Launcher_NewVersion
                     }
                     file[LibFileValue.State] = StateValue.preVerified.ToString();
                 }
-                File.WriteAllText(Path.GetFullPath(LibFile), updateFiles.ToString());
+                File.WriteAllText(Path.GetFullPath(Settings.LibFile), updateFiles.ToString());
             }
             catch
             {
@@ -553,8 +556,8 @@ namespace Launcher_NewVersion
                     this.Dispatcher.Invoke(action);
                     //Download file
                     string localFilePath = file[LibFileValue.Path].ToString();
-                    string downloadFilePath = file[LibFileValue.Path].ToString() + EnumHelper.GetDescription(FileExtentions.HlZip);
-                    string fileUri = DownloadFileUri + file[LibFileValue.Path].ToString() + EnumHelper.GetDescription(FileExtentions.HlZip);
+                    string downloadFilePath = file[LibFileValue.Path].ToString() + FileExtentions.HlZip.GetDescription();
+                    string fileUri = DownloadFileUri + file[LibFileValue.Path].ToString() + FileExtentions.HlZip.GetDescription();
 
                     var downloadLinkDetails = file[LibFileValue.DownloadLink].ToObject<List<DownloadLinkDetail>>();
                     fileUri = downloadLinkDetails
@@ -573,7 +576,7 @@ namespace Launcher_NewVersion
                             Status = LauncherStatus.failed;
                         };
                         this.Dispatcher.Invoke(action);
-                        MessageBox.Show("Update failed!!!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(MessageBoxContent.UpdateFailed.GetDescription(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         file[LibFileValue.State] = StateValue.failed.ToString();
                         break;
                     }
@@ -589,7 +592,7 @@ namespace Launcher_NewVersion
                     FixClient.Opacity = 1;
                 };
                 this.Dispatcher.Invoke(action);
-                MessageBox.Show("Lỗi đường truyền", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(MessageBoxContent.NetworkError.GetDescription(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
         }
@@ -670,7 +673,7 @@ namespace Launcher_NewVersion
                         Thread.Sleep(10);
                     }
 
-                    //Skip welldone file
+                    //Skip well done file
                     if (file[LibFileValue.State].ToString() == StateValue.done.ToString())
                     {
                         continue;
@@ -682,7 +685,7 @@ namespace Launcher_NewVersion
                     bool _isExtracting = true;
                     try
                     {
-                        ExtensionHelper.Extract(downloadFilePath, downloadFilePath);
+                        FileExtentions.HlZip.Extract(downloadFilePath, downloadFilePath);
                         File.Delete(downloadFilePath);
                         _isExtracting = false;
                     }
@@ -713,17 +716,15 @@ namespace Launcher_NewVersion
             }
         }
 
-        private HashSumFileDetail CreateHashSumFileDetail(
-            KeyValuePair<string, JToken> file,
-            StateValue state)
+        private HashSumFileDetail CreateHashSumFileDetail(KeyValuePair<string, JToken> file, StateValue state)
         {
+            var downloadLinks = JsonConvert.DeserializeObject<List<DownloadLinkDetail>>(file.Value[HashSumFileValue.DownLoadUri].ToString());
             return new HashSumFileDetail
             {
                 Path = file.Key,
                 Hash = file.Value[HashSumFileValue.Hash].ToString(),
                 State = state.ToString(),
-                DownloadLink = JsonConvert.DeserializeObject<List<DownloadLinkDetail>>(file.Value[HashSumFileValue.DownLoadUri].ToString())
-                                ?? new List<DownloadLinkDetail>()
+                DownloadLink = downloadLinks ?? new List<DownloadLinkDetail>()
             };
         }
 
@@ -755,7 +756,7 @@ namespace Launcher_NewVersion
                             count++;
                             updateFiles.Add(JObject.FromObject(fileObj));
                         }
-                        else if (file.Key != GameFilePath)
+                        else if (file.Key != Settings.GameFilePath)
                         {
                             updateFiles.Add(JObject.FromObject(fileObj));
                         }
@@ -769,7 +770,7 @@ namespace Launcher_NewVersion
                             lastFileToDownload = fileObj;
                         }
                     }
-                    else if (fileObj.Path == GameFilePath && updateFiles != null)
+                    else if (fileObj.Path == Settings.GameFilePath && updateFiles != null)
                     {
                         lastFileToDownload = fileObj;
                         continue;
@@ -784,9 +785,9 @@ namespace Launcher_NewVersion
                     updateFiles.Add(JObject.FromObject(lastFileToDownload));
 
                 if(updateFiles != null)
-                    File.WriteAllText(Path.GetFullPath(LibFile), JsonConvert.SerializeObject(updateFiles));
+                    File.WriteAllText(Path.GetFullPath(Settings.LibFile), JsonConvert.SerializeObject(updateFiles));
                 else
-                    File.WriteAllText(Path.GetFullPath(LibFile), JsonConvert.SerializeObject(hashSumFileDetails));
+                    File.WriteAllText(Path.GetFullPath(Settings.LibFile), JsonConvert.SerializeObject(hashSumFileDetails));
             }
             catch (Exception ex)
             {
@@ -794,40 +795,46 @@ namespace Launcher_NewVersion
             }
         }
 
-        private void AnalyzeRequiredFiles(bool forceRecheck = false)
+        private void AnalyzeRequiredFiles()
         {
             try
             {
-                this.json = NetworkHelper.FetchFromMultipleUris(HashSumUri);
+                hashSumData = HashSumUri.FetchDataFromMultipleUris(Encoding.Default);
+                clientFiles = hashSumData[HashSumFileValue.Data].ToObject<JObject>();
+                // Get the fastest mirror uri
+                var mirrors = hashSumData[HashSumFileValue.Mirrors].ToObject<List<Mirror>>();
+                var speedTestUris = mirrors.Select(mirror => mirror.TestFile).ToList();
+                var fastestUri = speedTestUris.GetFastestLink();
+                priorityMirror = mirrors.FirstOrDefault(mirror => mirror.TestFile == fastestUri).Id;
 
-                if (this.json != null)
+                var hashSumFileDetail = new List<HashSumFileDetail>();
+                bool isEmty = false;
+                if (File.ReadAllText(Path.GetFullPath(Settings.LibFile)) == "")
                 {
-                    this.clientFiles = this.json[HashSumFileValue.Data].ToObject<JObject>();
-
-                    // Get the fastest mirror uri
-                    var mirrors = this.json[HashSumFileValue.Mirrors].ToObject<List<Mirror>>();
-                    var speedTestUris = mirrors.Select(mirror => mirror.TestFile).ToList();
-                    var fastestUri = speedTestUris.GetFastestLink();
-                    priorityMirror = mirrors.FirstOrDefault(mirror => mirror.TestFile == fastestUri).Id;
+                    ExtractFileHashSum(ref hashSumFileDetail);
+                    isEmty = true;
                 }
                 else
                 {
-                    MessageBoxResult mbr = MessageBox.Show("Máy chủ đang quá tải!", "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
-                    switch (mbr)
+                    try
                     {
-                        case MessageBoxResult.OK:
-                            Environment.Exit(0);
-                            break;
-                        default:
-                            Environment.Exit(0);
-                            break;
+                        var fileLibValue = File.ReadAllText(Path.GetFullPath(Settings.LibFile));
+                        hashSumFileDetail = JsonConvert.DeserializeObject<List<HashSumFileDetail>>(fileLibValue);
+                    }
+                    catch
+                    {
+                        ExtractFileHashSum(ref hashSumFileDetail);
                     }
                 }
+                if (!isClick && !isEmty)
+                    ExtractFileHashSum(ref hashSumFileDetail, updateFiles, StateValue.done);
+                else
+                    ExtractFileHashSum(ref hashSumFileDetail, updateFiles);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("Error in AnalyzeRequiredFiles: " + ex.ToString());
-                MessageBoxResult mbr = MessageBox.Show("Máy chủ đang quá tải!\n Lỗi: " + ex.ToString(), "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult mbr = MessageBox.Show($"{MessageBoxContent.GetServerDataFailed.GetDescription()}", "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 switch (mbr)
                 {
                     case MessageBoxResult.OK:
@@ -838,29 +845,6 @@ namespace Launcher_NewVersion
                         break;
                 }
             }
-            var hashSumFileDetail = new List<HashSumFileDetail>();
-            bool isEmty = false;
-            if (File.ReadAllText(Path.GetFullPath(LibFile)) == "")
-            {
-                ExtractFileHashSum(ref hashSumFileDetail);
-                isEmty = true;
-            }
-            else
-            {
-                try
-                {
-                    var fileLibValue = File.ReadAllText(Path.GetFullPath(LibFile));
-                    hashSumFileDetail = JsonConvert.DeserializeObject<List<HashSumFileDetail>>(fileLibValue);
-                }
-                catch
-                {
-                    ExtractFileHashSum(ref hashSumFileDetail);
-                }
-            }
-            if (!isClick && !isEmty) 
-                ExtractFileHashSum(ref hashSumFileDetail, updateFiles, StateValue.done);
-            else
-                ExtractFileHashSum(ref hashSumFileDetail, updateFiles);
         }
 
         private bool IsFileInUse(string path)

@@ -7,7 +7,7 @@ namespace Launcher.Helpers
 {
     public static class EnumHelper
     {
-        public static string GetDescription(Enum value)
+        public static string GetDescription(this Enum value)
         {
             FieldInfo fieldInfo = value.GetType().GetField(value.ToString());
 
