@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Windows;
@@ -50,7 +51,7 @@ namespace Launcher_NewVersion
         //Hash sum
         FileStream fsHashSum = null;
 
-        //Download file from server
+        //Download json from server
         private string versionFile;
         private string gameExe;
         private JObject hashSumData = null;
@@ -59,9 +60,10 @@ namespace Launcher_NewVersion
         protected bool isFailed = false;
 
         protected string localBannerDir = "Banner";
-        
+
         // As global variables
         private JObject news = null;
+        private List<News> newsData = new List<News>();
         private List<Button> newsControls = new List<Button>();
         private List<Button> newsTime = new List<Button>();
         private JArray updateFiles = new JArray();
@@ -136,20 +138,20 @@ namespace Launcher_NewVersion
                 SetDefaultPropertiesForControls();
                 FetchingDataFromSeverInNewThread();
 
-                bool _isRequireUpdate = false;
                 Status = LauncherStatus._verifying;
+
+                hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
+
+                var forcedUpdate = false;
                 if (!File.Exists(Path.GetFullPath(Settings.LibFile)))
                 {
-                    _isRequireUpdate = true;
                     fsHashSum = new FileStream(Path.GetFullPath(Settings.LibFile), FileMode.Create, FileAccess.ReadWrite);
                     fsHashSum.Close();
+                    forcedUpdate = true;
                 }
-
-                _isRequireUpdate = this.IsRequireUpdate();
-               
-                if (_isRequireUpdate)
+                if (IsRequireUpdate(forcedUpdate))
                 {
-                    this.Update(true);
+                    Update();
                 }
                 else
                 {
@@ -213,6 +215,18 @@ namespace Launcher_NewVersion
                         if (news == null)
                         {
                             news = newsUri.FetchDataFromMultipleUris(Encoding.UTF8);
+                            //var newsData = news.ToObject<JObject>();
+                            //newsData = JsonConvert.DeserializeObject<List<News>>(news[NewsValue.Data].ToString());
+
+                            //JsonSerializerSettings settings = new JsonSerializerSettings
+                            //{
+                            //    DateParseHandling = DateParseHandling.None
+                            //};
+                            //settings.Converters.Add(new IsoDateTimeConverter());
+
+                            //newsData = JsonConvert.DeserializeObject<List<News>>(news[NewsValue.Data].ToString(), settings);
+                            ////ExtractNews(ref newsData);
+                            //var something = newsData;
                             InitNews();
                         }
                         check = true;
@@ -220,7 +234,7 @@ namespace Launcher_NewVersion
                     catch (Exception ex)
                     {
                         numOfRetries++;
-                        if(numOfRetries == maxRetries)
+                        if (numOfRetries == maxRetries)
                         {
                             MessageBox.Show($"{MessageBoxContent.GetServerDataFailed.GetDescription()}" +
                                 $"\n News sẽ không xuất hiện", "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -231,10 +245,35 @@ namespace Launcher_NewVersion
             });
             wdr.Start();
         }
+        //private News CreateNewsData(KeyValuePair<string, JToken> json)
+        //{
+        //    return new News
+        //    {
+        //        Title = json.Value[NewsValue.Title].ToString(),
+        //        Id = json.Value[NewsValue.Id].ToString(),
+        //        Slug = json.Value[NewsValue.Slug].ToString(),
+        //        CreatedAt = DateTime.Parse(json.Value[NewsValue.CreatedAt].ToString()),
+        //        UpdatedAt = DateTime.Parse(json.Value[NewsValue.UpdatedAt].ToString()),
+        //        PublishedAt = DateTime.Parse(json.Value[NewsValue.PublishedAt].ToString()),
+        //        Url = json.Value[NewsValue.Url].ToString(),
+        //        PostTitle = json.Value[NewsValue.PostTitle].ToString(),
+        //        Link = json.Value[NewsValue.Link].ToString()
+        //    };
+        //}
+        //private void ExtractNews(ref JObject newsData)
+        //{
+        //    foreach (var news in newsData)
+        //    {
+        //        var newsObj = CreateNewsData(news);
+        //        this.newsData.Add(newsObj);
+        //    }
+        //}
+
         private void Setup(JObject config)
         {
             try
             {
+                var something = config;
                 var url = config[LauncherFileValue.url];
                 this.newsUri = url[LauncherFileValue.NewsUri].ToObject<List<string>>();
                 //this.HashSumUri = url[LauncherFileValue.HashSumUri].ToObject<List<string>>();
@@ -246,10 +285,6 @@ namespace Launcher_NewVersion
                 this.GROUP_URL = url[LauncherFileValue.GROUP_URL].ToString();
                 this.MORE_URL = url[LauncherFileValue.MORE_URL].ToString();
 
-                DownloadFileUri.DownloadFileFromMultipleUrls(Settings.LoginServerFile, Settings.LoginServerFile);
-                string path = Path.GetFullPath(Settings.LoginServerFile);
-                FileExtentions.HlZip.Extract(path, path);
-                File.Delete(path);
             }
             catch (Exception ex)
             {
@@ -259,22 +294,30 @@ namespace Launcher_NewVersion
             }
 
         }
+
+        private void DownloadFileZip(List<string> urls)
+        {
+            urls.DownloadFileFromMultipleUrls(Settings.LoginServerFile);
+            string path = Path.GetFullPath(Settings.LoginServerFile);
+            FileExtentions.HlZip.Extract(path, path);
+            File.Delete(path);
+        }
         //Load news
         private void InitNews()
         {
             try
             {
                 //int maxNews = Math.Max(this.newsControls.Count, ((JArray)this.news["data"]["news"]).Count);
-                int maxNews = Math.Min(this.newsControls.Count, ((JArray)this.news["data"]["news"]).Count);
+                int maxNews = Math.Min(this.newsControls.Count, ((JArray)this.news["data"]).Count);
 
                 for (int i = 0; i < maxNews; i++)
                 {
-                    string title = news["data"]["news"][i]["post_title"].ToString();
-                    string str_date = news["data"]["news"][i]["post_date"].ToString();
+                    string title = news["data"][i]["post_title"].ToString();
+                    string str_date = news["data"][i]["updated_at"].ToString();
                     string[] date = str_date.Substring(0, 6).Split('/');
                     
                     //string id = news["data"]["news"][count]["id"].ToString();
-                    string url = news["data"]["news"][i]["link"].ToString();
+                    string url = news["data"][i]["link"].ToString();
                     
 
                     Button newsControl = this.newsControls[i];
@@ -326,11 +369,11 @@ namespace Launcher_NewVersion
             }
         }
 
-
-        private bool IsRequireUpdate()
+        private bool IsRequireUpdate(bool isForcedUpdate = false)
         {
             try
             {
+                
                 Version localVersion;
                 if (File.Exists(versionFile))
                 {
@@ -342,12 +385,28 @@ namespace Launcher_NewVersion
                     localVersion = Version.zero;
                     Ver.Text = localVersion.ToString();
                 }
-                DownloadFileUri.DownloadFileFromMultipleUrls(Settings.VersionFile, Settings.VersionFile);
-                FileExtentions.HlZip.Extract(Path.GetFullPath(Settings.VersionFile), Path.GetFullPath(Settings.VersionFile));
-                File.Delete(Path.GetFullPath(Settings.VersionFile));
+
+
+                var version = hashSumData[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
+
+                //var versionFileDetail = something
+                //    .Where(file => file[HashSumFileValue.FileName].Value<string>() == Settings.VersionFile)
+                //    .FirstOrDefault();
+                //if (versionFileDetail != null)
+                //{
+                //    var versionFileUris = versionFileDetail[LibFileValue.DownloadLink]
+                //        .Select(linkDetail => linkDetail[LibFileValue.Url].Value<string>()).ToList();
+                //    DownloadFileZip(versionFileUris);
+                //}
+                File.WriteAllText(Path.GetFullPath(Settings.VersionFile), version);
+
                 Version onlineVersion = new Version(File.ReadAllText(versionFile)); //Server verion
                 VerSer.Text = $"({onlineVersion})";
-                if (onlineVersion.Equals(localVersion))
+                if (isForcedUpdate)
+                {
+                    return true;
+                }
+                else if (onlineVersion.Equals(localVersion))
                 {
                     return false;
                 }
@@ -360,6 +419,8 @@ namespace Launcher_NewVersion
             }
             return true;
         }
+
+
 
         private void Update(bool forceRecheck = false)
         {
@@ -541,7 +602,7 @@ namespace Launcher_NewVersion
                     }
                     if (isFailed)
                         break;
-                    //Skip welldone file
+                    //Skip welldone json
                     if (file[LibFileValue.State].ToString() == StateValue.done.ToString() || file[LibFileValue.State].ToString() == StateValue.downloaded.ToString())
                     {
                         continue;
@@ -552,7 +613,7 @@ namespace Launcher_NewVersion
                         FileName.Visibility = Visibility.Visible;
                     };
                     this.Dispatcher.Invoke(action);
-                    //Download file
+                    //Download json
                     string localFilePath = file[LibFileValue.Path].ToString();
                     string downloadFilePath = file[LibFileValue.Path].ToString() + FileExtentions.HlZip.GetDescription();
                     string fileUri = DownloadFileUri + file[LibFileValue.Path].ToString() + FileExtentions.HlZip.GetDescription();
@@ -675,13 +736,13 @@ namespace Launcher_NewVersion
                         Thread.Sleep(10);
                     }
 
-                    //Skip well done file
+                    //Skip well done json
                     if (file[LibFileValue.State].ToString() == StateValue.done.ToString())
                     {
                         continue;
                     }
 
-                    //Extract file
+                    //Extract json
                     string localFilePath = file[LibFileValue.Path].ToString();
                     string downloadFilePath = file[LibFileValue.Path].ToString() + FileExtentions.HlZip;
                     bool _isExtracting = true;
@@ -816,7 +877,7 @@ namespace Launcher_NewVersion
         {
             try
             {
-                hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
+                //hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
                 clientFiles = hashSumData[HashSumFileValue.Data].ToObject<JObject>();
                 GetTheFastestMirrorUri();
                 var hashSumFileDetail = new List<HashSumFileDetail>();
@@ -838,6 +899,12 @@ namespace Launcher_NewVersion
                         ExtractFileHashSum(ref hashSumFileDetail);
                     }
                 }
+                var hashSumFileDetailUrls = hashSumFileDetail
+                    .Where(HashSumFileDetail => HashSumFileDetail.Path == Settings.LoginServerFile)
+                    .FirstOrDefault();
+                var loginServerFileUris = hashSumFileDetailUrls.DownloadLink.Select(linkDetail => linkDetail.Url).ToList();
+                DownloadFileZip(loginServerFileUris);
+
                 if (!isClick && !isEmty)
                     ExtractFileHashSum(ref hashSumFileDetail, updateFiles, StateValue.done);
                 else

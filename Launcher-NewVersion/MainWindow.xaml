@@ -167,10 +167,10 @@
         <Image x:Name="LeftSide" Source="/img/VIETNAMESE/left-side.png"  Grid.Row="0" Grid.RowSpan="3" Stretch="Uniform" Panel.ZIndex="0" HorizontalAlignment="Right" Width="230" Margin="0,86,0,200"/>
         <StackPanel  Grid.Column="1" VerticalAlignment="Top" Orientation="Horizontal" Height="20" Margin="21,160,0,0" >
             <TextBlock Name="VersionClient" TextAlignment="Center" Text="Version của client hiện tại:" Foreground="White" FontSize="10" FontWeight="Normal" AutomationProperties.IsColumnHeader="True" FontFamily="Myriad Pro" VerticalAlignment="Center" Height="15"/>
-            <TextBlock Name="Ver" TextAlignment="Left" Grid.Column="1" Grid.Row="8" Foreground="White" FontSize="10" FontWeight="Normal" Grid.ColumnSpan="3" Grid.RowSpan="2" FontFamily="Myriad Pro" Panel.ZIndex="10" VerticalAlignment="Center" Height="15" Text="5.005.007" Margin="5,0,0,0"/>
+            <TextBlock Name="Ver" TextAlignment="Left" Grid.Column="1" Grid.Row="8" Foreground="White" FontSize="10" FontWeight="Normal" Grid.ColumnSpan="3" Grid.RowSpan="2" FontFamily="Myriad Pro" Panel.ZIndex="10" VerticalAlignment="Center" Height="15" Text="" Margin="5,0,0,0"/>
             <!--<TextBlock Name="LastVersion" TextAlignment="Center" Grid.Row="8" Text="Phiên bản mới nhất:" Foreground="White" Grid.Column="1" FontSize="10" VerticalAlignment="Center" FontWeight="Normal" Grid.ColumnSpan="5" SnapsToDevicePixels="True" Height="15" Grid.RowSpan="2" FontFamily="Myriad Pro" Panel.ZIndex="10" Margin="10,0,0,0"/>-->
             <TextBlock Name="UStatus" TextAlignment="Left" Grid.Column="8" Grid.Row="8" Foreground="White" FontSize="10" Grid.ColumnSpan="5" VerticalAlignment="Center" FontWeight="Normal" Height="15" Grid.RowSpan="2" FontFamily="Myriad Pro" Text="- Không cần update" Margin="5,0,0,0"/>
-            <TextBlock Name="VerSer" TextAlignment="Left" Grid.Column="5" Grid.Row="8" Foreground="White" FontSize="10" FontWeight="Normal" Grid.RowSpan="2" Grid.ColumnSpan="4" FontFamily="Myriad Pro" VerticalAlignment="Center" Height="15" Text="(5.005.007)" Margin="5,0,0,0"/>
+            <TextBlock Name="VerSer" TextAlignment="Left" Grid.Column="5" Grid.Row="8" Foreground="White" FontSize="10" FontWeight="Normal" Grid.RowSpan="2" Grid.ColumnSpan="4" FontFamily="Myriad Pro" VerticalAlignment="Center" Height="15" Text="()" Margin="5,0,0,0"/>
 
         </StackPanel>
         <StackPanel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal" Margin="60,90,0,0" >

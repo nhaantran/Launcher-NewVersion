@@ -7,5 +7,6 @@ namespace Launcher.Models
         public const string Hash = "Hash";
         public const string State = "State";
         public const string DownloadLink = "DownloadLink";
+        public const string Url = "Url";
     }
 }

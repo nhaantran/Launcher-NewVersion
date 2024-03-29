@@ -22,12 +22,12 @@ namespace Launcher_NewVersion
             if (majorVersion == 6 && minorVersion == 1)
             {
                 // Windows 7
-                ServicePointManager.SecurityProtocol = Tls10;
+                //ServicePointManager.SecurityProtocol = Tls10;
             }
             else if(majorVersion < 6)
             {
                 // Windows XP or earlier
-                ServicePointManager.SecurityProtocol = Tls10;
+                //ServicePointManager.SecurityProtocol = Tls10;
             }
             else
             {

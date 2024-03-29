@@ -80,7 +80,7 @@ namespace Launcher.Helpers
         /// <param name="baseUrls"></param>
         /// <param name="path"></param>
         /// <param name="fileName"></param>
-        public static void DownloadFileFromMultipleUrls(this List<string> baseUrls, string path, string fileName)
+        public static void DownloadFileFromMultipleUrls(this List<string> baseUrls, string fileName)
         {
             try
             {
@@ -96,7 +96,7 @@ namespace Launcher.Helpers
                 {
                     try
                     {
-                        var fullPath = url + path;
+                        var fullPath = url;
                         wc.DownloadFile(fullPath, fileName);
                         break;
                     }

@@ -77,6 +77,7 @@
     <Compile Include="Helpers\ConfigHelper.cs" />
     <Compile Include="Helpers\DecryptHelper.cs" />
     <Compile Include="Helpers\EnumHelper.cs" />
+    <Compile Include="Helpers\IsoDateTimeConverter.cs" />
     <Compile Include="Helpers\NetworkHelper.cs" />
     <Compile Include="Helpers\ExtensionHelper.cs" />
     <Compile Include="Models\FileExtentions.cs" />
@@ -87,6 +88,8 @@
     <Compile Include="Models\LibFileValue.cs" />
     <Compile Include="Models\MessageBoxContent.cs" />
     <Compile Include="Models\Mirror.cs" />
+    <Compile Include="Models\News.cs" />
+    <Compile Include="Models\NewsValue.cs" />
     <Compile Include="Models\StateValue.cs" />
     <Compile Include="Models\Settings.cs" />
     <Compile Include="Helpers\SslProtocals.cs" />
