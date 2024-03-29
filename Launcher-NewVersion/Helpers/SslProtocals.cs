@@ -14,9 +14,26 @@ namespace Launcher_NewVersion
 
         public static void SetUpDefaultSslProtocals()
         {
-            // WIN XP will not run this code
-            if(Environment.OSVersion.Version.Major >= 6)
-                ServicePointManager.SecurityProtocol = Tls10 | Tls12 ;
+            // Get the major and minor version numbers of the operating system
+            int majorVersion = Environment.OSVersion.Version.Major;
+            int minorVersion = Environment.OSVersion.Version.Minor;
+
+            // Set the default TLS version based on the operating system
+            if (majorVersion == 6 && minorVersion == 1)
+            {
+                // Windows 7
+                ServicePointManager.SecurityProtocol = Tls10;
+            }
+            else if(majorVersion < 6)
+            {
+                // Windows XP or earlier
+                ServicePointManager.SecurityProtocol = Tls10;
+            }
+            else
+            {
+                // Windows 10 or later
+                ServicePointManager.SecurityProtocol = Tls10 | Tls12;
+            }
         }
     }
 }

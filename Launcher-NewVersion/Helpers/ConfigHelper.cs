@@ -16,7 +16,7 @@ namespace Launcher.Helpers
         {
             try
             {
-                string configFilePath = Path.GetFullPath(Settings.ConfigFile);
+                string configFilePath = Path.GetFullPath(Settings.ConfigFilePath);
                 JObject configFile = JObject.Parse(File.ReadAllText(configFilePath));
 
                 return configFile ?? throw new Exception();

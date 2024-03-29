@@ -39,7 +39,6 @@ namespace Launcher_NewVersion
         private static readonly double WIDTH = 1080f;
         private static readonly double HEIGHT = 740f;
         private List<string> newsUri = null;
-        private List<string> HashSumUri = null;
         private List<string> DownloadFileUri = null;
         private string HOME_URL = null;
         private string REGISTER_URL = null;
@@ -65,7 +64,6 @@ namespace Launcher_NewVersion
         private JObject news = null;
         private List<Button> newsControls = new List<Button>();
         private List<Button> newsTime = new List<Button>();
-        private List<string> banners = new List<string>();
         private JArray updateFiles = new JArray();
         private bool isUpdating = false;
 
@@ -215,7 +213,7 @@ namespace Launcher_NewVersion
                         if (news == null)
                         {
                             news = newsUri.FetchDataFromMultipleUris(Encoding.UTF8);
-                            InitsNews();
+                            InitNews();
                         }
                         check = true;
                     }
@@ -239,7 +237,7 @@ namespace Launcher_NewVersion
             {
                 var url = config[LauncherFileValue.url];
                 this.newsUri = url[LauncherFileValue.NewsUri].ToObject<List<string>>();
-                this.HashSumUri = url[LauncherFileValue.HashSumUri].ToObject<List<string>>();
+                //this.HashSumUri = url[LauncherFileValue.HashSumUri].ToObject<List<string>>();
                 this.DownloadFileUri = url[LauncherFileValue.DownloadFileUri].ToObject<List<string>>();
                 this.HOME_URL = url[LauncherFileValue.HOME_URL].ToString();
                 this.REGISTER_URL = url[LauncherFileValue.REGISTER_URL].ToString();
@@ -262,7 +260,7 @@ namespace Launcher_NewVersion
 
         }
         //Load news
-        private void InitsNews()
+        private void InitNews()
         {
             try
             {
@@ -493,7 +491,7 @@ namespace Launcher_NewVersion
                     string hash;
                     if (File.Exists(Path.GetFullPath(filePath)))
                     {
-                        hash = DecryptHelper.CalculateMD5(filePath);
+                        hash = filePath.CalculateMD5();
                         if (hash == file[LibFileValue.Hash].ToString())
                         {
                             file[LibFileValue.State] = StateValue.done.ToString();
@@ -560,9 +558,13 @@ namespace Launcher_NewVersion
                     string fileUri = DownloadFileUri + file[LibFileValue.Path].ToString() + FileExtentions.HlZip.GetDescription();
 
                     var downloadLinkDetails = file[LibFileValue.DownloadLink].ToObject<List<DownloadLinkDetail>>();
-                    fileUri = downloadLinkDetails
+                    if(priorityMirror != "")
+                    {
+                        fileUri = downloadLinkDetails
                         .Where(downloadLinkDetail => downloadLinkDetail.Mirror == priorityMirror)
                         .Select(downloadLinkDetail => downloadLinkDetail.Url).FirstOrDefault();
+                    }
+                    else fileUri = downloadLinkDetails.FirstOrDefault().Url;
                                         
                     DownLoadFile(downloadFilePath, localFilePath, fileUri);
                     if (!isFailed)
@@ -795,18 +797,28 @@ namespace Launcher_NewVersion
             }
         }
 
-        private void AnalyzeRequiredFiles()
+        private void GetTheFastestMirrorUri()
         {
             try
             {
-                hashSumData = HashSumUri.FetchDataFromMultipleUris(Encoding.Default);
-                clientFiles = hashSumData[HashSumFileValue.Data].ToObject<JObject>();
-                // Get the fastest mirror uri
                 var mirrors = hashSumData[HashSumFileValue.Mirrors].ToObject<List<Mirror>>();
                 var speedTestUris = mirrors.Select(mirror => mirror.TestFile).ToList();
                 var fastestUri = speedTestUris.GetFastestLink();
                 priorityMirror = mirrors.FirstOrDefault(mirror => mirror.TestFile == fastestUri).Id;
+            }
+            catch (Exception)
+            {
+                priorityMirror = "";
+            }
+        }
 
+        private void AnalyzeRequiredFiles()
+        {
+            try
+            {
+                hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
+                clientFiles = hashSumData[HashSumFileValue.Data].ToObject<JObject>();
+                GetTheFastestMirrorUri();
                 var hashSumFileDetail = new List<HashSumFileDetail>();
                 bool isEmty = false;
                 if (File.ReadAllText(Path.GetFullPath(Settings.LibFile)) == "")

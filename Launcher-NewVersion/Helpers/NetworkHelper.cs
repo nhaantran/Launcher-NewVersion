@@ -73,6 +73,13 @@ namespace Launcher.Helpers
                 Debug.WriteLine($"Error in DownloadFile {ex}");
             }
         }
+
+        /// <summary>
+        /// Download file from multiple URLs
+        /// </summary>
+        /// <param name="baseUrls"></param>
+        /// <param name="path"></param>
+        /// <param name="fileName"></param>
         public static void DownloadFileFromMultipleUrls(this List<string> baseUrls, string path, string fileName)
         {
             try
@@ -185,8 +192,9 @@ namespace Launcher.Helpers
         /// </summary>
         /// <param name="uris">list of links</param>
         /// <param name="encoding">type of encoding for WebClient</param>
+        /// <param name="fileName">name of file to get</param>
         /// <returns>JSON Object</returns>
-        public static JObject FetchDataFromMultipleUris(this List<string> uris, Encoding encoding)
+        public static JObject FetchDataFromMultipleUris(this List<string> uris, Encoding encoding, string fileName = "")
         {
             WebClient wc = new WebClient
             {
@@ -197,13 +205,13 @@ namespace Launcher.Helpers
             {
                 try
                 {
-                    string downloadfile = wc.DownloadString(new Uri(uri));
+                    string downloadfile = wc.DownloadString(new Uri(uri+fileName));
                     json = JObject.Parse(downloadfile);
                     break;
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Error in FetchFromMultipleUris {uri}: {ex}");
+                    Debug.WriteLine($"Error in FetchFromMultipleUris {uri+fileName}: {ex}");
                     if (uri == uris.Last()) throw;
                 }
             }

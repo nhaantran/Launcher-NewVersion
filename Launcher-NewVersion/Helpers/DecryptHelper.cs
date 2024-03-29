@@ -6,7 +6,7 @@ namespace Launcher.Helpers
 {
     public static class DecryptHelper
     {
-        public static string CalculateMD5(string filename)
+        public static string CalculateMD5(this string filename)
         {
             try
             {
