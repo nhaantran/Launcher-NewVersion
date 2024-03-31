@@ -14,5 +14,7 @@ namespace Launcher.Models
         public const string GROUP_URL = "GROUP_URL";
         public const string NEWBIE_URL = "NEWBIE_URL";
         public const string MORE_URL = "MORE_URL";
+        public const string TIMEOUT = "TIMEOUT";
+
     }
 }

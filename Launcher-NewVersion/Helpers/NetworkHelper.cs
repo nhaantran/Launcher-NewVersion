@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Windows;
@@ -82,7 +83,7 @@ namespace Launcher.Helpers
         /// <param name="baseUrls"></param>
         /// <param name="path"></param>
         /// <param name="fileName"></param>
-        public static void DownloadFileFromMultipleUrls(this List<string> baseUrls, string fileName)
+        public static void DownloadFileFromMultipleUrls(this List<string> baseUrls, string fileName, int timeout = 3000)
         {
             try
             {
@@ -93,14 +94,20 @@ namespace Launcher.Helpers
                 {
                     Directory.CreateDirectory(destinationDirectory);
                 }
-                WebClient wc = new WebClient();
                 foreach (var url in baseUrls)
                 {
                     try
                     {
-                        var fullPath = url;
-                        wc.DownloadFile(fullPath, fileName);
-                        break;
+                        using (TimeOutWebClientHelper wc = new TimeOutWebClientHelper(timeout))
+                        {
+                            var fullPath = url;
+                            wc.DownloadFile(fullPath, fileName);
+                            break;
+                        }
+                    }
+                    catch (WebException ex) when (ex.Status == WebExceptionStatus.Timeout)
+                    {
+                        throw;
                     }
                     catch (Exception ex)
                     {
@@ -115,6 +122,8 @@ namespace Launcher.Helpers
                 throw;
             }
         }
+        
+
 
         /// <summary>
         /// Calculate the fastest link to download from a list of links
@@ -195,25 +204,30 @@ namespace Launcher.Helpers
         /// <param name="uris">list of links</param>
         /// <param name="encoding">type of encoding for WebClient</param>
         /// <param name="fileName">name of file to get</param>
+        /// <param name="timeout">timeout</param>
         /// <returns>JSON Object</returns>
-        public static JObject FetchDataFromMultipleUris(this List<string> uris, Encoding encoding, string fileName = "")
+        public static JObject FetchDataFromMultipleUris(this List<string> uris, Encoding encoding, string fileName = "", int timeout = 3000)
         {
-            WebClient wc = new WebClient
-            {
-                Encoding = encoding
-            };
             JObject json = null;
             foreach (var uri in uris)
             {
                 try
                 {
-                    string downloadfile = wc.DownloadString(new Uri(uri+fileName));
-                    json = JObject.Parse(downloadfile);
+                    using (TimeOutWebClientHelper wc = new TimeOutWebClientHelper(timeout))
+                    {
+                        wc.Encoding = encoding;
+                        string downloadfile = wc.DownloadString(new Uri(uri + fileName));
+                        json = JObject.Parse(downloadfile);
+                    }
                     break;
+                }
+                catch (WebException ex) when (ex.Status == WebExceptionStatus.Timeout)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Error in FetchFromMultipleUris {uri+fileName}: {ex}");
+                    Debug.WriteLine($"Error in FetchFromMultipleUris {uri + fileName}: {ex}");
                     if (uri == uris.Last()) throw new FetchingErrorException("Fetch error");
                 }
             }

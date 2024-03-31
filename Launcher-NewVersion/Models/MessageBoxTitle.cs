@@ -36,5 +36,8 @@ namespace Launcher.Models
 
         [Description("Máy chủ đang quá tải!!!")]
         Overload,
+
+        [Description("Kết nối đến máy chủ quá lâu!!!")]
+        ConnectionTimeout,
     }
 }

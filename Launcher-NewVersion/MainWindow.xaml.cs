@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -47,7 +48,7 @@ namespace Launcher_NewVersion
         private string FANPAGE_URL = null;
         private string GROUP_URL = null;
         private string MORE_URL = null;
-
+        private int TIMEOUT = 0;
         //Hash sum
         FileStream fsHashSum = null;
 
@@ -56,7 +57,7 @@ namespace Launcher_NewVersion
         private string gameExe;
         private JObject hashSumData = null;
         private JObject clientFiles = new JObject();
-        private string priorityMirror;
+        private string priorityMirror = "";
         protected bool isFailed = false;
 
         protected string localBannerDir = "Banner";
@@ -137,15 +138,10 @@ namespace Launcher_NewVersion
             {
                 UsingDynamicControlsGeneration();
                 SetDefaultPropertiesForControls();
-                FetchingDataFromSeverInNewThread();
+                FetchingNewsFromSeverInNewThread();
+                hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile, timeout: TIMEOUT);
 
-                if (Launcher.Properties.Settings.Default.isFirstRun)
-                {
-                    hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
-                    Launcher.Properties.Settings.Default.isFirstRun = false;
-                }
-
-                Status = LauncherStatus._verifying;
+                //FetchingHashSumFileFromServerInNewThread();
 
 
                 var forcedUpdate = false;
@@ -169,26 +165,30 @@ namespace Launcher_NewVersion
                     if (!File.Exists(Path.GetFullPath(Settings.ModeSavedFile)))
                         File.Create(Path.GetFullPath(Settings.ModeSavedFile)).Close();
                     selectMode.IsEnabled = true;
-                    setMode();
+                    //setMode();
                     if (!File.Exists(Path.GetFullPath(Settings.IPSavedFile)))
                         File.Create(Path.GetFullPath(Settings.IPSavedFile)).Close();
                     File.WriteAllText(Path.GetFullPath(Settings.IPSavedFile), NetworkHelper.GetPublicIpAddress());
                 }
             }
-            //catch (Exception ex)
-            //{
-            //    Debug.WriteLine($"Error in Window_ContentRendered: {ex}");
-            //}
+            catch (WebException)
+            {
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ConnectionTimeout),
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             catch (FetchingErrorException)
             {
-                
-                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GetServerDataFailed), 
+
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GetServerDataFailed),
                     "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
                 PlayGame.IsEnabled = true;
                 FixClient.IsEnabled = true;
             }
         }
-        private List<KeyValuePair<MessageBoxTitle,string>> _messageBoxDescription = new List<KeyValuePair<MessageBoxTitle, string>>();
+        private List<KeyValuePair<MessageBoxTitle, string>> _messageBoxDescription = new List<KeyValuePair<MessageBoxTitle, string>>();
         private void SetUpMessageBoxContent()
         {
             _messageBoxContent = ConfigHelper.ReadMessageBoxContent();
@@ -228,16 +228,16 @@ namespace Launcher_NewVersion
         private void PostSetUp()
         {
             Status = LauncherStatus.ready;
-                    Progress.Visibility = Visibility.Hidden;
-                    OneFileProgress.Visibility = Visibility.Hidden;
-                    FileName.Visibility = Visibility.Hidden;
-                    PlayGame.IsEnabled = true;
-                    if (!File.Exists(Path.GetFullPath(Settings.ModeSavedFile)))
-                        File.Create(Path.GetFullPath(Settings.ModeSavedFile)).Close();
+            Progress.Visibility = Visibility.Hidden;
+            OneFileProgress.Visibility = Visibility.Hidden;
+            FileName.Visibility = Visibility.Hidden;
+            PlayGame.IsEnabled = true;
+            if (!File.Exists(Path.GetFullPath(Settings.ModeSavedFile)))
+                File.Create(Path.GetFullPath(Settings.ModeSavedFile)).Close();
 
-                    if (!File.Exists(Path.GetFullPath(Settings.IPSavedFile)))
-                        File.Create(Path.GetFullPath(Settings.IPSavedFile)).Close();
-                    File.WriteAllText(Path.GetFullPath(Settings.IPSavedFile), NetworkHelper.GetPublicIpAddress());
+            if (!File.Exists(Path.GetFullPath(Settings.IPSavedFile)))
+                File.Create(Path.GetFullPath(Settings.IPSavedFile)).Close();
+            File.WriteAllText(Path.GetFullPath(Settings.IPSavedFile), NetworkHelper.GetPublicIpAddress());
         }
 
         private void UsingDynamicControlsGeneration()
@@ -268,12 +268,21 @@ namespace Launcher_NewVersion
             Loading_Copy.Maximum = 100;
         }
 
-        private void FetchingDataFromSeverInNewThread()
+        private void FetchingHashSumFileFromServerInNewThread()
+        {
+            Thread wdr = new Thread(() =>
+            {
+                hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile, timeout: TIMEOUT);
+            });
+            wdr.Start();
+        }
+
+        private void FetchingNewsFromSeverInNewThread()
         {
             Thread wdr = new Thread(() =>
             {
                 var numOfRetries = 0;
-                var maxRetries = 3;
+                var maxRetries = newsUri.Count*3;
                 bool check = false;
                 do
                 {
@@ -281,7 +290,7 @@ namespace Launcher_NewVersion
                     {
                         if (news == null)
                         {
-                            news = newsUri.FetchDataFromMultipleUris(Encoding.UTF8);
+                            news = newsUri.FetchDataFromMultipleUris(Encoding.UTF8, timeout: TIMEOUT);
                             newsData = news[NewsValue.Data].ToObject<List<News>>();
                             InitNews();
                         }
@@ -289,18 +298,15 @@ namespace Launcher_NewVersion
                     }
                     catch (Exception ex)
                     {
-                        //numOfRetries++;
-                        //if (numOfRetries == maxRetries)
-                        //{                        
-                        //    MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.UpdateNewsFailed), 
-                        //        "TLBB", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        //}
-                        MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.UpdateNewsFailed),
+                        numOfRetries++;
+                        if (numOfRetries == maxRetries)
+                        {
+                            MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.UpdateNewsFailed),
                                 "TLBB", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
                         Debug.WriteLine($"Error in FetchingDataFromSeverInNewThread: {ex}");
                     }
-                } while (!check );
-                //|| numOfRetries < maxRetries
+                } while (!check && numOfRetries <= maxRetries);
             });
             wdr.Start();
         }
@@ -319,7 +325,8 @@ namespace Launcher_NewVersion
                 this.FANPAGE_URL = url[LauncherFileValue.FANPAGE_URL].ToString();
                 this.GROUP_URL = url[LauncherFileValue.GROUP_URL].ToString();
                 this.MORE_URL = url[LauncherFileValue.MORE_URL].ToString();
-
+                this.TIMEOUT = int.Parse(
+                    (double.Parse(url[LauncherFileValue.TIMEOUT].ToString(), CultureInfo.InvariantCulture) * 1000).ToString());
             }
             catch (Exception ex)
             {
@@ -334,7 +341,7 @@ namespace Launcher_NewVersion
 
         private void DownloadFileZip(List<string> urls, string fileName)
         {
-            urls.DownloadFileFromMultipleUrls(fileName);
+            urls.DownloadFileFromMultipleUrls(fileName, timeout: TIMEOUT);
             string path = Path.GetFullPath(fileName) + FileExtentions.HlZip.GetDescription();
             FileExtentions.HlZip.Extract(path, path);
             File.Delete(path);
@@ -425,22 +432,9 @@ namespace Launcher_NewVersion
 
                 if(hashSumData == null)
                 {
-                    hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
+                    hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile, timeout: TIMEOUT);
                 }
                 var version = hashSumData[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
-
-                //var versionFileDetail = something
-                //    .Where(file => file[HashSumFileValue.FileName].Value<string>() == Settings.VersionFile)
-                //    .FirstOrDefault();
-                //if (versionFileDetail != null)
-                //{
-                //    var versionFileUris = versionFileDetail[LibFileValue.DownloadLink]
-                //        .Select(linkDetail => linkDetail[LibFileValue.Url].Value<string>()).ToList();
-                //    DownloadFileZip(versionFileUris);
-                //}
-                // File.WriteAllText(Path.GetFullPath(Settings.VersionFile), version);
-
-                //Version onlineVersion = new Version(File.ReadAllText(versionFile)); //Server verion
                 VerSer.Text = $"({version})";
                 if (isForcedUpdate)
                 {
@@ -572,7 +566,7 @@ namespace Launcher_NewVersion
                     FixClient.IsEnabled = true;
                     FixClient.Opacity = 1;
                     Ver.Text = hashSumData[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
-                    setMode();
+                    //setMode();
                 };
                 this.Dispatcher.Invoke(action);
                 if (fsHashSum != null)
@@ -728,6 +722,8 @@ namespace Launcher_NewVersion
                         fileUri = downloadLinkDetails
                         .Where(downloadLinkDetail => downloadLinkDetail.Mirror == priorityMirror)
                         .Select(downloadLinkDetail => downloadLinkDetail.Url).FirstOrDefault();
+                        
+                        DownLoadFile(downloadFilePath, localFilePath, fileUri);
                     }
                     else
                     {
@@ -739,7 +735,7 @@ namespace Launcher_NewVersion
                                 DownLoadFile(downloadFilePath, localFilePath, downloadLinkDetail.Url, isLast);
                                 FileInfo fileInfo = new FileInfo(downloadFilePath);
 
-                                if (fileInfo.Length == 0)
+                                if (fileInfo.Exists && fileInfo.Length == 0)
                                 {
                                     File.Delete(downloadFilePath);
                                     throw new Exception("Download failed");
@@ -1090,7 +1086,10 @@ namespace Launcher_NewVersion
                     switch (mbr)
                     {
                         case MessageBoxResult.OK:
-                            this.Update(true);
+                            if (IsRequireUpdate(true))
+                            {
+                                Update();
+                            }
                             break;
                         default:
                             return true;
@@ -1355,7 +1354,11 @@ namespace Launcher_NewVersion
                 File.Delete(Path.GetFullPath("Lib.txt"));
                 fsHashSum = new FileStream(Path.GetFullPath("Lib.txt"), FileMode.Create, FileAccess.ReadWrite);
                 fsHashSum.Close();
-                this.Update(true);
+
+                if (IsRequireUpdate(true))
+                {
+                    Update();
+                }
                 isClick = false;
                 isFailed = false;
             }

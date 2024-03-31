@@ -14,7 +14,7 @@ namespace Launcher_NewVersion
         {
             AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
             {
-                string folderPath = @"Data/Libs";
+                string folderPath = @"Bin/Libs";
                 string assemblyName = new AssemblyName(args.Name).Name;
                 string dllPath = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, folderPath), $"{assemblyName}.dll");
                 return File.Exists(dllPath) ? Assembly.LoadFile(dllPath) : null;

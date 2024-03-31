@@ -81,6 +81,9 @@
     <Compile Include="Helpers\FileHelpers.cs" />
     <Compile Include="Helpers\NetworkHelper.cs" />
     <Compile Include="Helpers\ExtensionHelper.cs" />
+    <Compile Include="Helpers\TimeOutWebClientHelper.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Models\FileExtentions.cs" />
     <Compile Include="Models\HashSumFileValue.cs" />
     <Compile Include="Models\DownloadLinkDetail.cs" />
