@@ -22,5 +22,17 @@ namespace Launcher.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool isFirstRun {
+            get {
+                return ((bool)(this["isFirstRun"]));
+            }
+            set {
+                this["isFirstRun"] = value;
+            }
+        }
     }
 }

@@ -74,10 +74,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Exceptions\FetchingErrorException.cs" />
     <Compile Include="Helpers\ConfigHelper.cs" />
     <Compile Include="Helpers\DecryptHelper.cs" />
     <Compile Include="Helpers\EnumHelper.cs" />
-    <Compile Include="Helpers\IsoDateTimeConverter.cs" />
+    <Compile Include="Helpers\FileHelpers.cs" />
     <Compile Include="Helpers\NetworkHelper.cs" />
     <Compile Include="Helpers\ExtensionHelper.cs" />
     <Compile Include="Models\FileExtentions.cs" />
@@ -86,6 +87,7 @@
     <Compile Include="Models\HashSumFileDetail.cs" />
     <Compile Include="Models\LauncherFileValue.cs" />
     <Compile Include="Models\LibFileValue.cs" />
+    <Compile Include="Models\MessageCotent.cs" />
     <Compile Include="Models\MessageBoxContent.cs" />
     <Compile Include="Models\Mirror.cs" />
     <Compile Include="Models\News.cs" />

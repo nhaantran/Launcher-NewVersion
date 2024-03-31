@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Launcher.Exceptions;
+using Launcher.Models;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -84,7 +86,7 @@ namespace Launcher.Helpers
         {
             try
             {
-                fileName = Path.GetFullPath(fileName);
+                fileName = Path.GetFullPath(fileName) + FileExtentions.HlZip.GetDescription();
                 string destinationDirectory = Path.GetDirectoryName(fileName);
 
                 if (!Directory.Exists(destinationDirectory))
@@ -212,7 +214,7 @@ namespace Launcher.Helpers
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"Error in FetchFromMultipleUris {uri+fileName}: {ex}");
-                    if (uri == uris.Last()) throw;
+                    if (uri == uris.Last()) throw new FetchingErrorException("Fetch error");
                 }
             }
             return json;

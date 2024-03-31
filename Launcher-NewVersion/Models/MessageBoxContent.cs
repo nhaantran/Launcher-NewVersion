@@ -24,5 +24,11 @@ namespace Launcher.Models
 
         [Description("Không tìm thấy file config!!!")]
         ConfigFileNotFound,
+
+        [Description("Không thể tìm thấy trò chơi! Nhấn Sửa lỗi để khắc phục")]
+        GameNotFound,
+
+        [Description("Cập nhật danh sách tin tức thất bại, bạn có thể vô trang chủ để xem tin tức mới.\nẤn Start để khởi động game.")]
+        UpdateNewsFailed,
     }
 }

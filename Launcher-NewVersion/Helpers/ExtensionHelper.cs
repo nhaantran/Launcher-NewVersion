@@ -12,7 +12,6 @@ namespace Launcher.Helpers
         {
             sourceFile = Path.GetFullPath(sourceFile);
             destinationDirectory = Path.GetFullPath(destinationDirectory);
-
             if (!File.Exists(sourceFile))
             {
                 return;
@@ -33,7 +32,6 @@ namespace Launcher.Helpers
                     ExtractZipFile(sourceFile, destinationDirectory);
                     break;
             }
-            ExtractZipFile(sourceFile, destinationDirectory);
         }
 
         public static void ExtractZipFile(string sourceFile, string destinationDirectory)
