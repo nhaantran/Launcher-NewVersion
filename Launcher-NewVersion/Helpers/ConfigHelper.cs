@@ -23,10 +23,26 @@ namespace Launcher.Helpers
             }
             catch (Exception)
             { 
-                MessageBox.Show(MessageBoxContent.ConfigFileNotFound.GetDescription(), "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(MessageBoxTitle.ConfigFileNotFound.GetDescription(), "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 Environment.Exit(0);
                 return null;
             }
+        }
+
+        public static MessageBoxContent ReadMessageBoxContent()
+        {
+            try
+            {
+                string configFilePath = Path.GetFullPath(Settings.MessageBoxContentFile);
+                var messageContent = JObject.Parse(File.ReadAllText(configFilePath)).ToObject<MessageBoxContent>();
+                return messageContent;
+            }
+            catch (Exception)
+            {
+                MessageBox.Show(MessageBoxTitle.ConfigFileNotFound.GetDescription(), "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                Environment.Exit(0);    
+            }
+            return null;
         }
     }
 }

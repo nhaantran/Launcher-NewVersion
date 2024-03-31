@@ -68,7 +68,7 @@ namespace Launcher_NewVersion
         private List<Button> newsTime = new List<Button>();
         private JArray updateFiles = new JArray();
         private bool isUpdating = false;
-
+        private MessageBoxContent _messageBoxContent = null;
         //Check FixClient on click
         private bool isClick = false;
 
@@ -132,6 +132,7 @@ namespace Launcher_NewVersion
         {
             JObject configFile = ConfigHelper.ReadConfig();
             Setup(configFile);
+            SetUpMessageBoxContent();
             try
             {
                 UsingDynamicControlsGeneration();
@@ -180,11 +181,33 @@ namespace Launcher_NewVersion
             //}
             catch (FetchingErrorException)
             {
-                MessageBox.Show(MessageBoxContent.GetServerDataFailed.GetDescription(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GetServerDataFailed), 
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 PlayGame.IsEnabled = true;
                 FixClient.IsEnabled = true;
             }
         }
+        private List<KeyValuePair<MessageBoxTitle,string>> _messageBoxDescription = new List<KeyValuePair<MessageBoxTitle, string>>();
+        private void SetUpMessageBoxContent()
+        {
+            _messageBoxContent = ConfigHelper.ReadMessageBoxContent();
+            var defaultLanguage = _messageBoxContent.DefaultLanguage;
+            GetMessageContent(defaultLanguage);
+        }
+
+        private void GetMessageContent(MessageBoxLanguage defaultLanguage)
+        {
+            foreach (var data in _messageBoxContent.MessageBoxData)
+            {
+                var message = data.MessageBoxDescriptions
+                    .Where(x => x.Language.Equals(defaultLanguage))
+                    .Select(x => x.Message).FirstOrDefault();
+                _messageBoxDescription.Add(new KeyValuePair<MessageBoxTitle, string>(data.Title, message));
+            }
+            var something = _messageBoxDescription;
+        }
+
         private void selectMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             try
@@ -266,22 +289,26 @@ namespace Launcher_NewVersion
                     }
                     catch (Exception ex)
                     {
-                        numOfRetries++;
-                        if (numOfRetries == maxRetries)
-                        {
-                            MessageBox.Show($"{MessageBoxContent.UpdateNewsFailed.GetDescription()}", "TLBB", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        }
+                        //numOfRetries++;
+                        //if (numOfRetries == maxRetries)
+                        //{                        
+                        //    MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.UpdateNewsFailed), 
+                        //        "TLBB", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        //}
+                        MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.UpdateNewsFailed),
+                                "TLBB", MessageBoxButton.OK, MessageBoxImage.Warning);
                         Debug.WriteLine($"Error in FetchingDataFromSeverInNewThread: {ex}");
                     }
-                } while (!check || numOfRetries < maxRetries);
+                } while (!check );
+                //|| numOfRetries < maxRetries
             });
             wdr.Start();
         }
+        
         private void Setup(JObject config)
         {
             try
             {
-                var something = config;
                 var url = config[LauncherFileValue.url];
                 this.newsUri = url[LauncherFileValue.NewsUri].ToObject<List<string>>();
                 //this.HashSumUri = url[LauncherFileValue.HashSumUri].ToObject<List<string>>();
@@ -297,7 +324,9 @@ namespace Launcher_NewVersion
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error in Setup: {ex}");
-                MessageBox.Show($"{MessageBoxContent.PrepareDataFailed.GetDescription()}", "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.PrepareDataFailed), 
+                    "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 Environment.Exit(1);
             }
 
@@ -425,7 +454,8 @@ namespace Launcher_NewVersion
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"{MessageBoxContent.ErrorWhileDownloading.GetDescription()}" ,"TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ErrorWhileDownloading), 
+                    "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 VerSer.Text = $"(Không thể kết nối với máy chủ)";
                 Debug.WriteLine($"IsRequireUpdate error: {ex}");
             }
@@ -455,7 +485,8 @@ namespace Launcher_NewVersion
 
                 if (isFileinUse)
                 {
-                    MessageBoxResult mbr = MessageBox.Show(MessageBoxContent.TurnOffGame.GetDescription(), "Error", MessageBoxButton.OKCancel, MessageBoxImage.Error);
+                    MessageBoxResult mbr = MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.TurnOffGame), 
+                        "Error", MessageBoxButton.OKCancel, MessageBoxImage.Error);
                     switch (mbr)
                     {
                         case MessageBoxResult.OK:
@@ -515,7 +546,8 @@ namespace Launcher_NewVersion
                 }
                 if (isFailed)
                 {
-                    MessageBox.Show(MessageBoxContent.ErrorWhileDownloading.GetDescription(), "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ErrorWhileDownloading),
+                        "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 else if (completed == total)
                 {
@@ -734,7 +766,9 @@ namespace Launcher_NewVersion
                             Status = LauncherStatus.failed;
                         };
                         this.Dispatcher.Invoke(action);
-                        MessageBox.Show(MessageBoxContent.UpdateFailed.GetDescription(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        
+                        MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.UpdateFailed), 
+                            "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         file[LibFileValue.State] = StateValue.failed.ToString();
                         break;
                     }
@@ -750,7 +784,8 @@ namespace Launcher_NewVersion
                     FixClient.Opacity = 1;
                 };
                 this.Dispatcher.Invoke(action);
-                MessageBox.Show(MessageBoxContent.NetworkError.GetDescription(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.NetworkError), 
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
         }
@@ -788,7 +823,7 @@ namespace Launcher_NewVersion
                     //    {
                     //        timer.Stop();
                     //        wc.CancelAsync();
-                    //        MessageCotent.Show("Download timed out after 3 minutes.");
+                    //        MessageBoxContent.Show("Download timed out after 3 minutes.");
                     //    }
                     //};
                     //timer.Start();
@@ -1028,7 +1063,8 @@ namespace Launcher_NewVersion
             catch (Exception ex)
             {
                 Debug.WriteLine("Error in AnalyzeRequiredFiles: " + ex.ToString());
-                MessageBoxResult mbr = MessageBox.Show($"{MessageBoxContent.GetServerDataFailed.GetDescription()}", "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxResult mbr = MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GetServerDataFailed), 
+                    "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 switch (mbr)
                 {
                     case MessageBoxResult.OK:
@@ -1049,7 +1085,8 @@ namespace Launcher_NewVersion
                     using (var stream = new FileStream(path, FileMode.Open, FileAccess.Write)) { }
                 else
                 {
-                    MessageBoxResult mbr = MessageBox.Show("Không thể tìm thấy trò chơi! Nhấn Sửa lỗi để khắc phục", "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBoxResult mbr = MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GameNotFound), 
+                        "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                     switch (mbr)
                     {
                         case MessageBoxResult.OK:
@@ -1157,7 +1194,7 @@ namespace Launcher_NewVersion
             }
             catch
             {
-                MessageBox.Show("Máy đang quá tải!");
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.Overload));
             }
         }
         private void Register_Click(object sender, RoutedEventArgs e)
@@ -1171,7 +1208,7 @@ namespace Launcher_NewVersion
             }
             catch
             {
-                MessageBox.Show("Máy đang quá tải!");
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.Overload));
             }
         }
 
@@ -1186,7 +1223,7 @@ namespace Launcher_NewVersion
             }
             catch
             {
-                MessageBox.Show("Máy đang quá tải!");
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.Overload));
             }
         }
 
@@ -1201,7 +1238,7 @@ namespace Launcher_NewVersion
             }
             catch
             {
-                MessageBox.Show("Máy đang quá tải!");
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.Overload));
             }
         }
 
@@ -1250,7 +1287,7 @@ namespace Launcher_NewVersion
             }
             catch
             {
-                MessageBox.Show("Đã xảy ra lỗi! Nhấn Sửa lỗi để khắc phục!");
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ErrorOccurred));
             }
         }
         private void UpdateStatus_btn_MouseEnter(object sender, MouseEventArgs e)
@@ -1294,15 +1331,17 @@ namespace Launcher_NewVersion
                     Process.Start(cmdFileName);
                     Environment.Exit(0);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-
-                    MessageBox.Show("Có lỗi xảy ra: " + ex.ToString(), "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                    
+                    MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ErrorOccurred), 
+                        "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
             {
-                MessageBox.Show("Không thể tìm thấy trò chơi! Nhấn Sửa lỗi để khắc phục", "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GameNotFound), 
+                    "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         #endregion

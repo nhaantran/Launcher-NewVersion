@@ -87,8 +87,8 @@
     <Compile Include="Models\HashSumFileDetail.cs" />
     <Compile Include="Models\LauncherFileValue.cs" />
     <Compile Include="Models\LibFileValue.cs" />
-    <Compile Include="Models\MessageCotent.cs" />
     <Compile Include="Models\MessageBoxContent.cs" />
+    <Compile Include="Models\MessageBoxTitle.cs" />
     <Compile Include="Models\Mirror.cs" />
     <Compile Include="Models\News.cs" />
     <Compile Include="Models\NewsValue.cs" />

@@ -32,7 +32,7 @@ namespace Launcher_NewVersion
             else
             {
                 // Windows 10 or later
-                ServicePointManager.SecurityProtocol = Tls10 | Tls12;
+                ServicePointManager.SecurityProtocol = Tls10 ;
             }
         }
     }

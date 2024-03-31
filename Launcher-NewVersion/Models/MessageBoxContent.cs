@@ -1,34 +1,39 @@
-﻿using System.ComponentModel;
+﻿
+using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Launcher.Models
 {
-    public enum MessageBoxContent
+    public class MessageBoxContent
     {
-        [Description("Trò chơi vẫn còn đang chạy!!! Hãy tắt trò chơi.")]
-        TurnOffGame,
-
-        [Description("Có lỗi xảy ra trong quá trình tải!!!")]
-        ErrorWhileDownloading,
-
-        [Description("Cập nhật thất bại!!! Vui lòng thử lại sau.")]
-        UpdateFailed,
-
-        [Description("Lấy dữ liệu từ máy chủ thất bại!!! Vui lòng liên hệ với GM và thử lại sau.")]
-        GetServerDataFailed,
-
-        [Description("Lỗi dường truyền!!! Vui lòng thử lại sau.")]
-        NetworkError,
-
-        [Description("Quá trình chuẩn bị data thất bại!!! Vui lòng thử lại sau.")]
-        PrepareDataFailed,
-
-        [Description("Không tìm thấy file config!!!")]
-        ConfigFileNotFound,
-
-        [Description("Không thể tìm thấy trò chơi! Nhấn Sửa lỗi để khắc phục")]
-        GameNotFound,
-
-        [Description("Cập nhật danh sách tin tức thất bại, bạn có thể vô trang chủ để xem tin tức mới.\nẤn Start để khởi động game.")]
-        UpdateNewsFailed,
+        [JsonProperty("Default_Language")]
+        public MessageBoxLanguage DefaultLanguage { get; set; }
+        [JsonProperty("Data")]
+        public List<MessageBoxData> MessageBoxData { get; set; }
     }
+
+    public class MessageBoxData
+    {
+        [JsonProperty("Title")]
+        public MessageBoxTitle Title { get; set; }
+        [JsonProperty("Descriptions")]
+        public List<MessageBoxDescriptions> MessageBoxDescriptions { get; set; }
+    }
+    
+
+    public class MessageBoxDescriptions
+    {
+        [JsonProperty("Message")]
+        public string Message { get; set; }
+        [JsonProperty("Language")]
+        public MessageBoxLanguage Language { get; set; }
+    }
+
+    public enum MessageBoxLanguage
+    {
+        vi,
+        en
+    }
+    
+    
 }

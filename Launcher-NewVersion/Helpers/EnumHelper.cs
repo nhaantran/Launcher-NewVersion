@@ -1,6 +1,10 @@
-﻿using System;
+﻿using Launcher.Models;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Reflection;
+using System.Windows.Input;
 
 
 namespace Launcher.Helpers
@@ -22,6 +26,14 @@ namespace Launcher.Helpers
             {
                 return value.ToString();
             }
+        }
+        public static string GetMessageBoxDescription(
+            this List<KeyValuePair<MessageBoxTitle, string>> messageBoxDescription, 
+            MessageBoxTitle title)
+        {
+            return messageBoxDescription
+                .Where(x => x.Key.Equals(title))
+                .Select(x => x.Value).FirstOrDefault();
         }
     }
 }
