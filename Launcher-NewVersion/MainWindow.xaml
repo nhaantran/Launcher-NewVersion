@@ -416,7 +416,7 @@
                   Visibility="Hidden"
                   IsEnabled="False" 
                   Style="{StaticResource ComboBoxFlatStyle}" 
-                  SelectionChanged="selectMode_SelectionChanged" 
+                  SelectionChanged="SelectMode_SelectionChanged" 
                   Margin="100,0,0,0"
                   Grid.Column="2" VerticalAlignment="Bottom" Panel.ZIndex="1" HorizontalAlignment="Left" Width="145" Height="25" FontFamily="Myriad Pro" FontSize="14"/>
 

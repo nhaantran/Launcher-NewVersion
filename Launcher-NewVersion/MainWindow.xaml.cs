@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -100,7 +101,7 @@ namespace Launcher_NewVersion
                         }
                         else
                         {
-                            UpdateStatus.Text = "Cập nhật thất bạn"; UStatus.Text = "(Cập nhật ngay)"; UpdateStatus_btn.IsEnabled = true;
+                            UpdateStatus.Text = "Cập nhật thất bại"; UStatus.Text = "(Cập nhật ngay)"; UpdateStatus_btn.IsEnabled = true;
                         }
                         break;
                     case LauncherStatus.downloadingUpdate:
@@ -126,6 +127,7 @@ namespace Launcher_NewVersion
             }
         }
 
+        private List<KeyValuePair<MessageBoxTitle, string>> _messageBoxDescription = new List<KeyValuePair<MessageBoxTitle, string>>();
         #endregion
 
         #region Methods
@@ -139,37 +141,7 @@ namespace Launcher_NewVersion
                 UsingDynamicControlsGeneration();
                 SetDefaultPropertiesForControls();
                 FetchingNewsFromSeverInNewThread();
-                hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile, timeout: TIMEOUT);
-
-                //FetchingHashSumFileFromServerInNewThread();
-
-
-                var forcedUpdate = false;
-                if (!File.Exists(Path.GetFullPath(Settings.LibFile)))
-                {
-                    fsHashSum = new FileStream(Path.GetFullPath(Settings.LibFile), FileMode.Create, FileAccess.ReadWrite);
-                    fsHashSum.Close();
-                    forcedUpdate = true;
-                }
-                if (IsRequireUpdate(forcedUpdate))
-                {
-                    Update();
-                }
-                else
-                {
-                    Status = LauncherStatus.ready;
-                    Progress.Visibility = Visibility.Hidden;
-                    OneFileProgress.Visibility = Visibility.Hidden;
-                    FileName.Visibility = Visibility.Hidden;
-                    PlayGame.IsEnabled = true;
-                    if (!File.Exists(Path.GetFullPath(Settings.ModeSavedFile)))
-                        File.Create(Path.GetFullPath(Settings.ModeSavedFile)).Close();
-                    selectMode.IsEnabled = true;
-                    //setMode();
-                    if (!File.Exists(Path.GetFullPath(Settings.IPSavedFile)))
-                        File.Create(Path.GetFullPath(Settings.IPSavedFile)).Close();
-                    File.WriteAllText(Path.GetFullPath(Settings.IPSavedFile), NetworkHelper.GetPublicIpAddress());
-                }
+                FetchingFileHashSumFromServerInNewThread();
             }
             catch (WebException)
             {
@@ -188,7 +160,59 @@ namespace Launcher_NewVersion
                 FixClient.IsEnabled = true;
             }
         }
-        private List<KeyValuePair<MessageBoxTitle, string>> _messageBoxDescription = new List<KeyValuePair<MessageBoxTitle, string>>();
+
+        private void FetchingFileHashSumFromServerInNewThread()
+        {
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += (s, ev) =>
+            {
+                hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
+                ev.Result = hashSumData;
+            };
+
+            worker.RunWorkerCompleted += (s, ev) =>
+            {
+                if (ev.Error == null)
+                {
+                    var forcedUpdate = false;
+                    if (!File.Exists(Path.GetFullPath(Settings.LibFile)))
+                    {
+                        fsHashSum = new FileStream(Path.GetFullPath(Settings.LibFile), FileMode.Create, FileAccess.ReadWrite);
+                        fsHashSum.Close();
+                        forcedUpdate = true;
+                    }
+                    Debug.WriteLine("1");
+                    IsRequireUpdate(result =>
+                    {
+                        Debug.WriteLine("2");
+                        if (result)
+                        {
+                            Debug.WriteLine("3");
+                            Update();
+                        }
+                        else
+                        {
+                            Status = LauncherStatus.ready;
+                            Progress.Visibility = Visibility.Hidden;
+                            OneFileProgress.Visibility = Visibility.Hidden;
+                            FileName.Visibility = Visibility.Hidden;
+                            PlayGame.IsEnabled = true;
+                            if (!File.Exists(Path.GetFullPath(Settings.ModeSavedFile)))
+                                File.Create(Path.GetFullPath(Settings.ModeSavedFile)).Close();
+                            selectMode.IsEnabled = true;
+                            //setMode();
+                            if (!File.Exists(Path.GetFullPath(Settings.IPSavedFile)))
+                                File.Create(Path.GetFullPath(Settings.IPSavedFile)).Close();
+                            File.WriteAllText(Path.GetFullPath(Settings.IPSavedFile), NetworkHelper.GetPublicIpAddress());
+                        }
+                    }, forcedUpdate, 1);
+                }
+            };
+            Debug.WriteLine("4");
+            worker.RunWorkerAsync();
+            Debug.WriteLine("5");
+        }
+
         private void SetUpMessageBoxContent()
         {
             _messageBoxContent = ConfigHelper.ReadMessageBoxContent();
@@ -208,7 +232,7 @@ namespace Launcher_NewVersion
             var something = _messageBoxDescription;
         }
 
-        private void selectMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void SelectMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             try
             {
@@ -223,21 +247,6 @@ namespace Launcher_NewVersion
                 FileExtentions.HlZip.Extract(path + "Setting.txt.hlzip", path + "Setting.txt.hlzip");
                 File.Delete(path + "Setting.txt.hlzip");
             }
-        }
-
-        private void PostSetUp()
-        {
-            Status = LauncherStatus.ready;
-            Progress.Visibility = Visibility.Hidden;
-            OneFileProgress.Visibility = Visibility.Hidden;
-            FileName.Visibility = Visibility.Hidden;
-            PlayGame.IsEnabled = true;
-            if (!File.Exists(Path.GetFullPath(Settings.ModeSavedFile)))
-                File.Create(Path.GetFullPath(Settings.ModeSavedFile)).Close();
-
-            if (!File.Exists(Path.GetFullPath(Settings.IPSavedFile)))
-                File.Create(Path.GetFullPath(Settings.IPSavedFile)).Close();
-            File.WriteAllText(Path.GetFullPath(Settings.IPSavedFile), NetworkHelper.GetPublicIpAddress());
         }
 
         private void UsingDynamicControlsGeneration()
@@ -266,15 +275,6 @@ namespace Launcher_NewVersion
             UpdateStatus_btn.Opacity = 1;
             Loading.Maximum = 100;
             Loading_Copy.Maximum = 100;
-        }
-
-        private void FetchingHashSumFileFromServerInNewThread()
-        {
-            Thread wdr = new Thread(() =>
-            {
-                hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile, timeout: TIMEOUT);
-            });
-            wdr.Start();
         }
 
         private void FetchingNewsFromSeverInNewThread()
@@ -413,8 +413,9 @@ namespace Launcher_NewVersion
                 }
             }
         }
+        
 
-        private bool IsRequireUpdate(bool isForcedUpdate = false)
+        private void IsRequireUpdate(Action<bool> callback, bool isForcedUpdate = false, int wtf = 0)
         {
             try
             {
@@ -429,22 +430,57 @@ namespace Launcher_NewVersion
                     localVersion = Version.zero;
                     Ver.Text = localVersion.ToString();
                 }
+                string version = "";
+                if (hashSumData == null)
+                {
+                    BackgroundWorker worker = new BackgroundWorker();
+                    worker.DoWork += (s, e) =>
+                    {
+                        hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
+                    };
 
-                if(hashSumData == null)
-                {
-                    hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile, timeout: TIMEOUT);
+                    worker.RunWorkerCompleted += (s, e) =>
+                    {
+                        if (e.Error == null)
+                        {
+                            version = hashSumData[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
+                            Debug.WriteLine("FetchHashSumAsync start");
+                            VerSer.Text = $"({version})";
+                            Debug.WriteLine("FetchHashSumAsync end");
+                            if (isForcedUpdate)
+                            {
+                                callback(true);
+                            }
+                            else if (!localVersion.IsDifferentThan(new Version(version)))
+                            {
+                                callback(false);
+                            }
+                            callback(false);
+                        }
+                    };
+
+                    worker.RunWorkerAsync();
                 }
-                var version = hashSumData[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
-                VerSer.Text = $"({version})";
-                if (isForcedUpdate)
+                else
                 {
-                    return true;
+                    version = hashSumData[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
+                    Debug.WriteLine("Outside start");
+                    VerSer.Text = $"({version})";
+                    Debug.WriteLine("Outside end");
+                    if (isForcedUpdate)
+                    {
+                        callback(true);
+                    }
+                    else if (!localVersion.IsDifferentThan(new Version(version)))
+                    {
+                        callback(false);
+                    }
                 }
-                
-                else if (!localVersion.IsDifferentThan(new Version(version)))
-                {
-                    return false;
-                }
+            }
+            catch (WebException ex) when (ex.Status == WebExceptionStatus.Timeout)
+            {
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ConnectionTimeout),
+                   "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
@@ -453,7 +489,6 @@ namespace Launcher_NewVersion
                 VerSer.Text = $"(Không thể kết nối với máy chủ)";
                 Debug.WriteLine($"IsRequireUpdate error: {ex}");
             }
-            return true;
         }
 
 
@@ -629,7 +664,7 @@ namespace Launcher_NewVersion
                 File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(@"Bin\" + "FairyResources.cfg"), true);
                 File.WriteAllText(Path.GetFullPath(modeSavedFile), selectMode.SelectedIndex.ToString());
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
             }
@@ -1048,6 +1083,7 @@ namespace Launcher_NewVersion
                 var hashSumFileDetailUrls = hashSumFileDetail
                     .Where(HashSumFileDetail => HashSumFileDetail.Path == Settings.LoginServerFile)
                     .FirstOrDefault();
+
                 var loginServerFileUris = hashSumFileDetailUrls.DownloadLink.Select(linkDetail => linkDetail.Url).ToList();
                 DownloadFileZip(loginServerFileUris, Settings.LoginServerFile);
 
@@ -1056,20 +1092,16 @@ namespace Launcher_NewVersion
                 else
                     ExtractFileHashSum(ref hashSumFileDetail, updateFiles);
             }
+            catch (WebException)
+            {
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ConnectionTimeout), 
+                                       "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             catch (Exception ex)
             {
                 Debug.WriteLine("Error in AnalyzeRequiredFiles: " + ex.ToString());
                 MessageBoxResult mbr = MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GetServerDataFailed), 
                     "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
-                switch (mbr)
-                {
-                    case MessageBoxResult.OK:
-                        Environment.Exit(0);
-                        break;
-                    default:
-                        Environment.Exit(0);
-                        break;
-                }
             }
         }
 
@@ -1086,10 +1118,17 @@ namespace Launcher_NewVersion
                     switch (mbr)
                     {
                         case MessageBoxResult.OK:
-                            if (IsRequireUpdate(true))
+                            IsRequireUpdate(result => 
                             {
-                                Update();
-                            }
+                                if (result)
+                                {
+                                    Update();
+                                }
+                            },true, 2);
+                            //if (IsRequireUpdate(true))
+                            //{
+                            //    Update();
+                            //}
                             break;
                         default:
                             return true;
@@ -1281,7 +1320,14 @@ namespace Launcher_NewVersion
                 File.Delete(Path.GetFullPath("Lib.txt"));
                 fsHashSum = new FileStream(Path.GetFullPath("Lib.txt"), FileMode.Create, FileAccess.ReadWrite);
                 fsHashSum.Close();
-                this.Update(true);
+                IsRequireUpdate(result =>
+                {
+                    if (result)
+                    {
+                        Update();
+                    }
+                }, true, 3);
+                //this.Update(true);
                 isFailed = false;
             }
             catch
@@ -1354,11 +1400,17 @@ namespace Launcher_NewVersion
                 File.Delete(Path.GetFullPath("Lib.txt"));
                 fsHashSum = new FileStream(Path.GetFullPath("Lib.txt"), FileMode.Create, FileAccess.ReadWrite);
                 fsHashSum.Close();
-
-                if (IsRequireUpdate(true))
+                IsRequireUpdate(result =>
                 {
-                    Update();
-                }
+                    if (result)
+                    {
+                        Update();
+                    }
+                }, true, 4);
+                //if (IsRequireUpdate(true))
+                //{
+                //    Update();
+                //}
                 isClick = false;
                 isFailed = false;
             }
