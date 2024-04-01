@@ -117,6 +117,8 @@ namespace Launcher_NewVersion
                         break;
                     case LauncherStatus.Checking:
                         UpdateStatus.Text = "Kiểm tra cập nhật";
+                        UpdateStatus_btn.IsEnabled = false; UpdateStatus_btn.Opacity = 1;
+                        PlayGame.IsEnabled = false; PlayGame.Opacity = 1;
                         break;
                     case LauncherStatus._verifying:
                         UpdateStatus.Text = "Xác thực dữ liệu ..."; UpdateStatus_btn.IsEnabled = false; UpdateStatus_btn.Opacity = 1;
@@ -133,6 +135,7 @@ namespace Launcher_NewVersion
         #region Methods
         private void Window_ContentRendered(object sender, EventArgs e)
         {
+            Status = LauncherStatus.Checking;
             JObject configFile = ConfigHelper.ReadConfig();
             Setup(configFile);
             SetUpMessageBoxContent();
@@ -147,18 +150,21 @@ namespace Launcher_NewVersion
             {
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ConnectionTimeout),
                     "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            catch (FetchingErrorException)
-            {
-
-                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GetServerDataFailed),
-                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
                 PlayGame.IsEnabled = true;
                 FixClient.IsEnabled = true;
             }
+            catch (FetchingErrorException)
+            {
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GetServerDataFailed),
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                PlayGame.IsEnabled = true;
+                FixClient.IsEnabled = true;
+            }
+            //finally
+            //{
+            //    PlayGame.IsEnabled = true;
+            //    FixClient.IsEnabled = true;
+            //}
         }
 
         private void FetchingFileHashSumFromServerInNewThread()
@@ -181,13 +187,10 @@ namespace Launcher_NewVersion
                         fsHashSum.Close();
                         forcedUpdate = true;
                     }
-                    Debug.WriteLine("1");
                     IsRequireUpdate(result =>
                     {
-                        Debug.WriteLine("2");
                         if (result)
                         {
-                            Debug.WriteLine("3");
                             Update();
                         }
                         else
@@ -199,18 +202,16 @@ namespace Launcher_NewVersion
                             PlayGame.IsEnabled = true;
                             if (!File.Exists(Path.GetFullPath(Settings.ModeSavedFile)))
                                 File.Create(Path.GetFullPath(Settings.ModeSavedFile)).Close();
-                            selectMode.IsEnabled = true;
+                            //selectMode.IsEnabled = true;
                             //setMode();
                             if (!File.Exists(Path.GetFullPath(Settings.IPSavedFile)))
                                 File.Create(Path.GetFullPath(Settings.IPSavedFile)).Close();
                             File.WriteAllText(Path.GetFullPath(Settings.IPSavedFile), NetworkHelper.GetPublicIpAddress());
                         }
-                    }, forcedUpdate, 1);
+                    }, forcedUpdate);
                 }
             };
-            Debug.WriteLine("4");
             worker.RunWorkerAsync();
-            Debug.WriteLine("5");
         }
 
         private void SetUpMessageBoxContent()
@@ -234,19 +235,19 @@ namespace Launcher_NewVersion
 
         private void SelectMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            try
-            {
-                File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(@"Bin\" + "FairyResources.cfg"), true);
-                File.WriteAllText(Path.GetFullPath(modeSavedFile), selectMode.SelectedIndex.ToString());
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Error in selectMode_SelectionChanged: " + ex.ToString());
-                string path = Path.GetFullPath(@"Bin\Launcher");
-                NetworkHelper.DownloadFileFromMultipleUrls(DownloadFileUri, @"Bin\Launcher\Setting.txt");
-                FileExtentions.HlZip.Extract(path + "Setting.txt.hlzip", path + "Setting.txt.hlzip");
-                File.Delete(path + "Setting.txt.hlzip");
-            }
+            //try
+            //{
+            //    File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(@"Bin\" + "FairyResources.cfg"), true);
+            //    File.WriteAllText(Path.GetFullPath(modeSavedFile), selectMode.SelectedIndex.ToString());
+            //}
+            //catch (Exception ex)
+            //{
+            //    Debug.WriteLine("Error in selectMode_SelectionChanged: " + ex.ToString());
+            //    string path = Path.GetFullPath(@"Bin\Launcher");
+            //    NetworkHelper.DownloadFileFromMultipleUrls(DownloadFileUri, @"Bin\Launcher\Setting.txt");
+            //    FileExtentions.HlZip.Extract(path + "Setting.txt.hlzip", path + "Setting.txt.hlzip");
+            //    File.Delete(path + "Setting.txt.hlzip");
+            //}
         }
 
         private void UsingDynamicControlsGeneration()
@@ -325,7 +326,12 @@ namespace Launcher_NewVersion
                 this.FANPAGE_URL = url[LauncherFileValue.FANPAGE_URL].ToString();
                 this.GROUP_URL = url[LauncherFileValue.GROUP_URL].ToString();
                 this.MORE_URL = url[LauncherFileValue.MORE_URL].ToString();
-                this.TIMEOUT = int.Parse(
+
+                if(url[LauncherFileValue.TIMEOUT] == null || url[LauncherFileValue.TIMEOUT].ToString() == "")
+                {
+                    this.TIMEOUT = 900000;
+                }
+                else this.TIMEOUT = int.Parse(
                     (double.Parse(url[LauncherFileValue.TIMEOUT].ToString(), CultureInfo.InvariantCulture) * 1000).ToString());
             }
             catch (Exception ex)
@@ -415,7 +421,7 @@ namespace Launcher_NewVersion
         }
         
 
-        private void IsRequireUpdate(Action<bool> callback, bool isForcedUpdate = false, int wtf = 0)
+        private void IsRequireUpdate(Action<bool> callback, bool isForcedUpdate = false)
         {
             try
             {
@@ -455,7 +461,10 @@ namespace Launcher_NewVersion
                             {
                                 callback(false);
                             }
-                            callback(false);
+                            else
+                            {
+                                callback(true);
+                            }
                         }
                     };
 
@@ -464,9 +473,7 @@ namespace Launcher_NewVersion
                 else
                 {
                     version = hashSumData[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
-                    Debug.WriteLine("Outside start");
                     VerSer.Text = $"({version})";
-                    Debug.WriteLine("Outside end");
                     if (isForcedUpdate)
                     {
                         callback(true);
@@ -474,6 +481,10 @@ namespace Launcher_NewVersion
                     else if (!localVersion.IsDifferentThan(new Version(version)))
                     {
                         callback(false);
+                    }
+                    else
+                    {
+                        callback(true);
                     }
                 }
             }
@@ -502,7 +513,7 @@ namespace Launcher_NewVersion
             Progress.Visibility = Visibility.Visible;
             Analyzing.Visibility = Visibility.Visible;
             PlayGame.IsEnabled = false;
-            selectMode.IsEnabled = false;
+            //selectMode.IsEnabled = false;
             PlayGame.Opacity = 0.7;
             FixClient.IsEnabled = false;
             FixClient.Opacity = 0.7;
@@ -578,7 +589,7 @@ namespace Launcher_NewVersion
                     MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ErrorWhileDownloading),
                         "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-                else if (completed == total)
+                else if (completed == total && total > 0)
                 {
                     File.WriteAllText(Path.GetFullPath(HashSumFileValue.VersionKey), hashSumData[HashSumFileValue.Data][HashSumFileValue.Version].ToString());
                     File.WriteAllText(Path.GetFullPath(Settings.LibFile), this.updateFiles.ToString());
@@ -595,7 +606,7 @@ namespace Launcher_NewVersion
                     Progress.Visibility = Visibility.Hidden;
                     OneFileProgress.Visibility = Visibility.Hidden;
                     FileName.Visibility = Visibility.Hidden;
-                    selectMode.IsEnabled = true;
+                    //selectMode.IsEnabled = true;
                     PlayGame.IsEnabled = true;
                     PlayGame.Opacity = 1;
                     FixClient.IsEnabled = true;
@@ -1124,7 +1135,7 @@ namespace Launcher_NewVersion
                                 {
                                     Update();
                                 }
-                            },true, 2);
+                            },true);
                             //if (IsRequireUpdate(true))
                             //{
                             //    Update();
@@ -1326,7 +1337,7 @@ namespace Launcher_NewVersion
                     {
                         Update();
                     }
-                }, true, 3);
+                }, true);
                 //this.Update(true);
                 isFailed = false;
             }
@@ -1406,7 +1417,7 @@ namespace Launcher_NewVersion
                     {
                         Update();
                     }
-                }, true, 4);
+                }, true);
                 //if (IsRequireUpdate(true))
                 //{
                 //    Update();
