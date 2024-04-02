@@ -109,8 +109,13 @@ namespace Launcher.Helpers
                     {
                         throw;
                     }
+                    catch (WebException ex) when (ex.Status == WebExceptionStatus.SecureChannelFailure)
+                    {
+                        if (url == baseUrls.Last()) throw;
+                    }
                     catch (Exception ex)
                     {
+                        var specificException = ex.GetType();
                         Debug.WriteLine($"Error in DownloadFileFromMultipleUrls {ex}");
                         if(url == baseUrls.Last()) throw;
                     }
@@ -193,6 +198,7 @@ namespace Launcher.Helpers
             }
             catch (Exception ex)
             {
+                var specificException = ex.GetType();
                 Debug.WriteLine($"Error in GetFastestLink {ex}");
                 return uris.FirstOrDefault();
             }
@@ -225,8 +231,12 @@ namespace Launcher.Helpers
                 {
                     throw;
                 }
-                catch (Exception ex)
+                catch (WebException ex) when (ex.Status == WebExceptionStatus.SendFailure)
                 {
+                    if (uri == uris.Last()) throw;
+                }
+                catch (Exception ex)
+                {                    
                     Debug.WriteLine($"Error in FetchFromMultipleUris {uri + fileName}: {ex}");
                     if (uri == uris.Last()) throw new FetchingErrorException("Fetch error");
                 }

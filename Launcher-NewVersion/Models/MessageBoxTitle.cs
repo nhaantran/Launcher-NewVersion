@@ -39,5 +39,9 @@ namespace Launcher.Models
 
         [Description("Kết nối đến máy chủ quá lâu!!!")]
         ConnectionTimeout,
+
+        [Description("Kết nối đến máy chủ thất bại do các vấn đề bảo mật!!!")]
+        TlsError,
+
     }
 }

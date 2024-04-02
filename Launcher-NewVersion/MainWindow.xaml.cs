@@ -137,37 +137,15 @@ namespace Launcher_NewVersion
         {
             Status = LauncherStatus.Checking;
             JObject configFile = ConfigHelper.ReadConfig();
-            Setup(configFile);
-            SetUpMessageBoxContent();
-            try
-            {
-                UsingDynamicControlsGeneration();
-                SetDefaultPropertiesForControls();
-                FetchingNewsFromSeverInNewThread();
-                FetchingFileHashSumFromServerInNewThread();
-            }
-            catch (WebException)
-            {
-                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ConnectionTimeout),
-                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                PlayGame.IsEnabled = true;
-                FixClient.IsEnabled = true;
-            }
-            catch (FetchingErrorException)
-            {
-                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GetServerDataFailed),
-                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                PlayGame.IsEnabled = true;
-                FixClient.IsEnabled = true;
-            }
-            //finally
-            //{
-            //    PlayGame.IsEnabled = true;
-            //    FixClient.IsEnabled = true;
-            //}
+            SetupConfigFile(configFile);
+            SetUpMessageBoxContent(); 
+            UsingDynamicControlsGeneration();
+            SetDefaultPropertiesForControls();
+            FetchingNewsFromSeverInBackground();
+            FetchingFileHashSumFromServerInBackground();
         }
 
-        private void FetchingFileHashSumFromServerInNewThread()
+        private void FetchingFileHashSumFromServerInBackground()
         {
             BackgroundWorker worker = new BackgroundWorker();
             worker.DoWork += (s, ev) =>
@@ -175,10 +153,39 @@ namespace Launcher_NewVersion
                 hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
                 ev.Result = hashSumData;
             };
-
             worker.RunWorkerCompleted += (s, ev) =>
             {
-                if (ev.Error == null)
+                if (ev.Result is WebException webExcetion)
+                {
+                    switch (webExcetion.Status)
+                    {
+                        case WebExceptionStatus.Timeout:
+                            MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ConnectionTimeout),
+                                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            break;
+                        case WebExceptionStatus.SendFailure:
+                            MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.TlsError),
+                                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            break;
+                        default:
+                            var exception = (WebException)ev.Result;
+                            MessageBox.Show(exception.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            break;
+                    }
+                    EnableButtonsIfError();
+                }
+                else if (ev.Result is FetchingErrorException)
+                {
+                    MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GetServerDataFailed),
+                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    EnableButtonsIfError();
+                }
+                else if (ev.Result is Exception ex)
+                {
+                    MessageBox.Show(ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    EnableButtonsIfError();
+                }
+                else if (ev.Error == null)
                 {
                     var forcedUpdate = false;
                     if (!File.Exists(Path.GetFullPath(Settings.LibFile)))
@@ -240,9 +247,9 @@ namespace Launcher_NewVersion
             //    File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(@"Bin\" + "FairyResources.cfg"), true);
             //    File.WriteAllText(Path.GetFullPath(modeSavedFile), selectMode.SelectedIndex.ToString());
             //}
-            //catch (Exception ex)
+            //catch (Exception webExcetion)
             //{
-            //    Debug.WriteLine("Error in selectMode_SelectionChanged: " + ex.ToString());
+            //    Debug.WriteLine("Error in selectMode_SelectionChanged: " + webExcetion.ToString());
             //    string path = Path.GetFullPath(@"Bin\Launcher");
             //    NetworkHelper.DownloadFileFromMultipleUrls(DownloadFileUri, @"Bin\Launcher\Setting.txt");
             //    FileExtentions.HlZip.Extract(path + "Setting.txt.hlzip", path + "Setting.txt.hlzip");
@@ -277,43 +284,68 @@ namespace Launcher_NewVersion
             Loading.Maximum = 100;
             Loading_Copy.Maximum = 100;
         }
-
-        private void FetchingNewsFromSeverInNewThread()
+        private void EnableButtonsIfError()
         {
+            PlayGame.IsEnabled = true;
+            FixClient.IsEnabled = true;
+        }
 
-            Thread wdr = new Thread(() =>
+        private void FetchingNewsFromSeverInBackground()
+        {
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += (s, ev) =>
             {
-                var numOfRetries = 0;
-                var maxRetries = newsUri.Count*3;
-                bool check = false;
-                do
+                try
                 {
-                    try
+                    if (news == null)
                     {
-                        if (news == null)
-                        {
-                            news = newsUri.FetchDataFromMultipleUris(Encoding.UTF8, timeout: TIMEOUT);
-                            newsData = news[NewsValue.Data].ToObject<List<News>>();
-                            InitNews();
-                        }
-                        check = true;
+                        news = newsUri.FetchDataFromMultipleUris(Encoding.UTF8, timeout: TIMEOUT);
+                        newsData = news[NewsValue.Data].ToObject<List<News>>();
+                        InitNews();
                     }
-                    catch (Exception ex)
+                }
+                catch(Exception ex)
+                {
+                    ev.Result = ex;
+                }
+            };
+            worker.RunWorkerCompleted += (s, ev) =>
+            {
+                if(ev.Result is WebException webExcetion)
+                {
+                    switch (webExcetion.Status)
                     {
-                        numOfRetries++;
-                        if (numOfRetries == maxRetries)
-                        {
-                            MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.UpdateNewsFailed),
-                                "TLBB", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        }
-                        Debug.WriteLine($"Error in FetchingDataFromSeverInNewThread: {ex}");
+                        case WebExceptionStatus.Timeout:
+                            MessageBox.Show($"News: {_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ConnectionTimeout)}",
+                                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            break;
+                            case WebExceptionStatus.SendFailure:
+                                MessageBox.Show($"News: {_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.TlsError)}",
+                                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            break;
+                        default:
+                            var exception = (WebException) ev.Result;
+                            MessageBox.Show($"News: {exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            break;
                     }
-                } while (!check && numOfRetries <= maxRetries);
-            });
-            wdr.Start();
+                    EnableButtonsIfError();
+                }
+                else if (ev.Result is FetchingErrorException)
+                {
+                    MessageBox.Show($"News: {_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GetServerDataFailed)}", 
+                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    EnableButtonsIfError();
+                }
+                else if (ev.Result is Exception ex)
+                {
+                    MessageBox.Show($"News: {ex.ToString()}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    EnableButtonsIfError();
+                }
+            };
+            worker.RunWorkerAsync();
         }
         
-        private void Setup(JObject config)
+        private void SetupConfigFile(JObject config)
         {
             try
             {
@@ -328,22 +360,23 @@ namespace Launcher_NewVersion
                 this.GROUP_URL = url[LauncherFileValue.GROUP_URL].ToString();
                 this.MORE_URL = url[LauncherFileValue.MORE_URL].ToString();
 
-                if(url[LauncherFileValue.TIMEOUT] == null || url[LauncherFileValue.TIMEOUT].ToString() == "")
+                if (url[LauncherFileValue.TIMEOUT] == null || url[LauncherFileValue.TIMEOUT].ToString() == "")
                 {
                     this.TIMEOUT = 900000;
                 }
-                else this.TIMEOUT = int.Parse(
+                else
+                {
+                    this.TIMEOUT = int.Parse(
                     (double.Parse(url[LauncherFileValue.TIMEOUT].ToString(), CultureInfo.InvariantCulture) * 1000).ToString());
+                }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error in Setup: {ex}");
-
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.PrepareDataFailed), 
                     "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 Environment.Exit(1);
             }
-
         }
 
         private void DownloadFileZip(List<string> urls, string fileName)
@@ -493,6 +526,11 @@ namespace Launcher_NewVersion
             {
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ConnectionTimeout),
                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch (WebException ex) when (ex.Status == WebExceptionStatus.SecureChannelFailure)
+            {
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.TlsError),
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
@@ -1104,10 +1142,15 @@ namespace Launcher_NewVersion
                 else
                     ExtractFileHashSum(ref hashSumFileDetail, updateFiles);
             }
-            catch (WebException)
+            catch (WebException ex) when (ex.Status == WebExceptionStatus.Timeout)
             {
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ConnectionTimeout), 
                                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch (WebException ex) when (ex.Status == WebExceptionStatus.SecureChannelFailure)
+            {
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.TlsError),
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
