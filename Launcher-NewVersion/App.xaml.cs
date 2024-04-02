@@ -21,9 +21,5 @@ namespace Launcher_NewVersion
             };
             base.OnStartup(e);
         }
-        public App() 
-        {
-            SslProtocals.SetUpDefaultSslProtocals();
-        }
     }
 }

@@ -223,9 +223,19 @@ namespace Launcher_NewVersion
 
         private void SetUpMessageBoxContent()
         {
-            _messageBoxContent = ConfigHelper.ReadMessageBoxContent();
-            var defaultLanguage = _messageBoxContent.DefaultLanguage;
-            GetMessageContent(defaultLanguage);
+            try
+            {
+                _messageBoxContent = ConfigHelper.ReadMessageBoxContent();
+                var defaultLanguage = _messageBoxContent.DefaultLanguage;
+                GetMessageContent(defaultLanguage);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.PrepareDataFailed), 
+                    "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                Environment.Exit(1);
+            }
+            
         }
 
         private void GetMessageContent(MessageBoxLanguage defaultLanguage)
@@ -237,7 +247,6 @@ namespace Launcher_NewVersion
                     .Select(x => x.Message).FirstOrDefault();
                 _messageBoxDescription.Add(new KeyValuePair<MessageBoxTitle, string>(data.Title, message));
             }
-            var something = _messageBoxDescription;
         }
 
         private void SelectMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1147,7 +1156,7 @@ namespace Launcher_NewVersion
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ConnectionTimeout), 
                                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            catch (WebException ex) when (ex.Status == WebExceptionStatus.SecureChannelFailure)
+            catch (WebException ex) when (ex.Status == WebExceptionStatus.SendFailure)
             {
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.TlsError),
                     "Error", MessageBoxButton.OK, MessageBoxImage.Error);
