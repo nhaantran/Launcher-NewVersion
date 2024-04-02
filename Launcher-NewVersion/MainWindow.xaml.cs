@@ -280,6 +280,7 @@ namespace Launcher_NewVersion
 
         private void FetchingNewsFromSeverInNewThread()
         {
+
             Thread wdr = new Thread(() =>
             {
                 var numOfRetries = 0;
