@@ -32,8 +32,7 @@ namespace Launcher.Models
     public enum MessageBoxLanguage
     {
         vi,
-        en
+        en,
+        zh
     }
-    
-    
 }

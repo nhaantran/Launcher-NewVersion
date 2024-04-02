@@ -97,7 +97,6 @@
     <Compile Include="Models\NewsValue.cs" />
     <Compile Include="Models\StateValue.cs" />
     <Compile Include="Models\Settings.cs" />
-    <Compile Include="Helpers\SslProtocals.cs" />
     <Compile Include="Helpers\Version.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

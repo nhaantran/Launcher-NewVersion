@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Windows;
@@ -83,7 +82,7 @@ namespace Launcher.Helpers
         /// <param name="baseUrls"></param>
         /// <param name="path"></param>
         /// <param name="fileName"></param>
-        public static void DownloadFileFromMultipleUrls(this List<string> baseUrls, string fileName, int timeout = 3000)
+        public static void DownloadFileFromMultipleUrls(this List<string> baseUrls, string fileName, int timeout = 900000)
         {
             try
             {
@@ -109,8 +108,13 @@ namespace Launcher.Helpers
                     {
                         throw;
                     }
+                    catch (WebException ex) when (ex.Status == WebExceptionStatus.SecureChannelFailure)
+                    {
+                        if (url == baseUrls.Last()) throw;
+                    }
                     catch (Exception ex)
                     {
+                        var specificException = ex.GetType();
                         Debug.WriteLine($"Error in DownloadFileFromMultipleUrls {ex}");
                         if(url == baseUrls.Last()) throw;
                     }
@@ -193,6 +197,7 @@ namespace Launcher.Helpers
             }
             catch (Exception ex)
             {
+                var specificException = ex.GetType();
                 Debug.WriteLine($"Error in GetFastestLink {ex}");
                 return uris.FirstOrDefault();
             }
@@ -206,7 +211,7 @@ namespace Launcher.Helpers
         /// <param name="fileName">name of file to get</param>
         /// <param name="timeout">timeout</param>
         /// <returns>JSON Object</returns>
-        public static JObject FetchDataFromMultipleUris(this List<string> uris, Encoding encoding, string fileName = "", int timeout = 3000)
+        public static JObject FetchDataFromMultipleUris(this List<string> uris, Encoding encoding, string fileName = "", int timeout = 900000)
         {
             JObject json = null;
             foreach (var uri in uris)
@@ -225,8 +230,14 @@ namespace Launcher.Helpers
                 {
                     throw;
                 }
-                catch (Exception ex)
+                catch (WebException ex) when (ex.Status == WebExceptionStatus.SendFailure)
                 {
+                    ex.Message.ToString();
+                    var respone = (HttpWebResponse) ex.Response;
+                    if (uri == uris.Last()) throw;
+                }
+                catch (Exception ex)
+                {                    
                     Debug.WriteLine($"Error in FetchFromMultipleUris {uri + fileName}: {ex}");
                     if (uri == uris.Last()) throw new FetchingErrorException("Fetch error");
                 }
