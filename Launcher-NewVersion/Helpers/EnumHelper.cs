@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
-using System.Windows.Input;
 
 
 namespace Launcher.Helpers
@@ -31,9 +30,10 @@ namespace Launcher.Helpers
             this List<KeyValuePair<MessageBoxTitle, string>> messageBoxDescription, 
             MessageBoxTitle title)
         {
-            return messageBoxDescription
+            var message = messageBoxDescription
                 .Where(x => x.Key.Equals(title))
                 .Select(x => x.Value).FirstOrDefault();
+            return message ?? title.GetDescription();
         }
     }
 }

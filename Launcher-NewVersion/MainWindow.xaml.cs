@@ -150,8 +150,15 @@ namespace Launcher_NewVersion
             BackgroundWorker worker = new BackgroundWorker();
             worker.DoWork += (s, ev) =>
             {
-                hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
-                ev.Result = hashSumData;
+                try
+                {
+                    hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
+                    ev.Result = hashSumData;
+                }
+                catch (Exception ex)
+                {
+                    ev.Result = ex;
+                }
             };
             worker.RunWorkerCompleted += (s, ev) =>
             {
@@ -233,9 +240,7 @@ namespace Launcher_NewVersion
             {
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.PrepareDataFailed), 
                     "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
-                Environment.Exit(1);
             }
-            
         }
 
         private void GetMessageContent(MessageBoxLanguage defaultLanguage)
