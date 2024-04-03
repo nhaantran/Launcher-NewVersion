@@ -108,7 +108,7 @@ namespace Launcher.Helpers
                     {
                         throw;
                     }
-                    catch (WebException ex) when (ex.Status == WebExceptionStatus.SecureChannelFailure)
+                    catch (WebException ex) when (ex.Status == WebExceptionStatus.SendFailure)
                     {
                         if (url == baseUrls.Last()) throw;
                     }
