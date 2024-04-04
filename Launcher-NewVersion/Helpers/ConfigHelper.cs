@@ -40,10 +40,8 @@ namespace Launcher.Helpers
             }
             catch (Exception ex)
             {
-                throw;
-                MessageBox.Show(MessageBoxTitle.ConfigFileNotFound.GetDescription(), "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 FileHelpers.WriteLog(ex.ToString());
-                Environment.Exit(0);    
+                throw;
             }
         }
     }

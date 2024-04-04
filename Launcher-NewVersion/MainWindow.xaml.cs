@@ -242,7 +242,6 @@ namespace Launcher_NewVersion
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.PrepareDataFailed), 
                     "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 FileHelpers.WriteLog(ex.ToString());
-                Environment.Exit(1);
             }
         }
 
@@ -394,7 +393,6 @@ namespace Launcher_NewVersion
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.PrepareDataFailed), 
                     "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 FileHelpers.WriteLog(ex.ToString());
-                Environment.Exit(1);
             }
         }
 
