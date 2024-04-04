@@ -34,6 +34,7 @@ namespace Launcher.Helpers
                     MessageBoxButton.OK,
                     MessageBoxImage.Error
                     );
+                FileHelpers.WriteLog(ex.ToString());
             }
         }
         public static string GetPublicIpAddress()
@@ -72,6 +73,7 @@ namespace Launcher.Helpers
             }
             catch (Exception ex)
             {
+                FileHelpers.WriteLog(ex.ToString());
                 Debug.WriteLine($"Error in DownloadFile {ex}");
             }
         }
@@ -106,16 +108,19 @@ namespace Launcher.Helpers
                     }
                     catch (WebException ex) when (ex.Status == WebExceptionStatus.Timeout)
                     {
+                        FileHelpers.WriteLog(ex.ToString());
                         throw;
                     }
                     catch (WebException ex) when (ex.Status == WebExceptionStatus.SendFailure)
                     {
+                        FileHelpers.WriteLog(ex.ToString());
                         if (url == baseUrls.Last()) throw;
                     }
                     catch (Exception ex)
                     {
                         var specificException = ex.GetType();
                         Debug.WriteLine($"Error in DownloadFileFromMultipleUrls {ex}");
+                        FileHelpers.WriteLog(ex.ToString());
                         if(url == baseUrls.Last()) throw;
                     }
                 }
@@ -123,6 +128,7 @@ namespace Launcher.Helpers
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error in DownloadFileFromMultipleUrls {ex}");
+                FileHelpers.WriteLog(ex.ToString());
                 throw;
             }
         }
@@ -169,6 +175,7 @@ namespace Launcher.Helpers
                         {
                             // Handle exception
                             Console.WriteLine($"Error downloading from {uris[index]}: {ex.Message}");
+                            FileHelpers.WriteLog(ex.ToString());
                             throw;
                         }
                         finally
@@ -199,6 +206,7 @@ namespace Launcher.Helpers
             {
                 var specificException = ex.GetType();
                 Debug.WriteLine($"Error in GetFastestLink {ex}");
+                FileHelpers.WriteLog(ex.ToString());
                 return uris.FirstOrDefault();
             }
         }
@@ -228,17 +236,21 @@ namespace Launcher.Helpers
                 }
                 catch (WebException ex) when (ex.Status == WebExceptionStatus.Timeout)
                 {
+                    FileHelpers.WriteLog(ex.ToString());
+
                     throw;
                 }
                 catch (WebException ex) when (ex.Status == WebExceptionStatus.SendFailure)
                 {
                     ex.Message.ToString();
                     var respone = (HttpWebResponse) ex.Response;
+                    FileHelpers.WriteLog(ex.ToString());
                     if (uri == uris.Last()) throw;
                 }
                 catch (Exception ex)
                 {                    
                     Debug.WriteLine($"Error in FetchFromMultipleUris {uri + fileName}: {ex}");
+                    FileHelpers.WriteLog(ex.ToString());
                     if (uri == uris.Last()) throw new FetchingErrorException("Fetch error");
                 }
             }

@@ -150,8 +150,16 @@ namespace Launcher_NewVersion
             BackgroundWorker worker = new BackgroundWorker();
             worker.DoWork += (s, ev) =>
             {
-                hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
-                ev.Result = hashSumData;
+                try
+                {
+                    hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
+                    ev.Result = hashSumData;
+                }
+                catch (Exception ex)
+                {
+                    ev.Result = ex;
+                    FileHelpers.WriteLog(ex.ToString());
+                }
             };
             worker.RunWorkerCompleted += (s, ev) =>
             {
@@ -229,10 +237,11 @@ namespace Launcher_NewVersion
                 var defaultLanguage = _messageBoxContent.DefaultLanguage;
                 GetMessageContent(defaultLanguage);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.PrepareDataFailed), 
                     "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                FileHelpers.WriteLog(ex.ToString());
                 Environment.Exit(1);
             }
             
@@ -313,9 +322,10 @@ namespace Launcher_NewVersion
                         InitNews();
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     ev.Result = ex;
+                    FileHelpers.WriteLog(ex.ToString());
                 }
             };
             worker.RunWorkerCompleted += (s, ev) =>
@@ -384,6 +394,7 @@ namespace Launcher_NewVersion
                 Debug.WriteLine($"Error in Setup: {ex}");
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.PrepareDataFailed), 
                     "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                FileHelpers.WriteLog(ex.ToString());
                 Environment.Exit(1);
             }
         }
@@ -451,6 +462,7 @@ namespace Launcher_NewVersion
             catch (Exception ex)
             {
                 Debug.WriteLine("Error in InitsNews: " + ex.ToString());
+                FileHelpers.WriteLog(ex.ToString());
                 for (int i = 0; i < this.newsControls.Count; i++)
                 {
                     Button newsControl = this.newsControls[i];
@@ -535,11 +547,13 @@ namespace Launcher_NewVersion
             {
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ConnectionTimeout),
                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                FileHelpers.WriteLog(ex.ToString());
             }
             catch (WebException ex) when (ex.Status == WebExceptionStatus.SecureChannelFailure)
             {
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.TlsError),
                     "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                FileHelpers.WriteLog(ex.ToString());
             }
             catch (Exception ex)
             {
@@ -547,6 +561,7 @@ namespace Launcher_NewVersion
                     "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 VerSer.Text = $"(Không thể kết nối với máy chủ)";
                 Debug.WriteLine($"IsRequireUpdate error: {ex}");
+                FileHelpers.WriteLog(ex.ToString());
             }
         }
 
@@ -625,9 +640,9 @@ namespace Launcher_NewVersion
                         Progress.Dispatcher.Invoke(new Action(() => { Progress.Content = completedPercent.ToString() + "%"; }));
                         Loading_Copy.Dispatcher.Invoke(new Action(() => { Loading_Copy.Value = completedPercent; }));
                     }
-                    catch
+                    catch (Exception ex)
                     {
-
+                        FileHelpers.WriteLog(ex.ToString());
                     }
 
                     Thread.Sleep(300);
@@ -715,17 +730,18 @@ namespace Launcher_NewVersion
                     modeIndex = _modeIndex == "" ? 0 : Int32.Parse(_modeIndex);
                     selectMode.SelectedItem = selection[modeIndex];
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     selectMode.SelectedItem = selection[0];
                     modeIndex = 0;
+                    FileHelpers.WriteLog(ex.ToString());
                 }
                 File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(@"Bin\" + "FairyResources.cfg"), true);
                 File.WriteAllText(Path.GetFullPath(modeSavedFile), selectMode.SelectedIndex.ToString());
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                FileHelpers.WriteLog(ex.ToString());
             }
         }
 
@@ -756,11 +772,12 @@ namespace Launcher_NewVersion
                 }
                 File.WriteAllText(Path.GetFullPath(Settings.LibFile), updateFiles.ToString());
             }
-            catch
+            catch (Exception ex)
             {
                 Action action = () => { Status = LauncherStatus.failed; };
                 this.Dispatcher.Invoke(action);
                 isFailed = true;
+                FileHelpers.WriteLog(ex.ToString());
             }
         }
 
@@ -836,8 +853,9 @@ namespace Launcher_NewVersion
                                 }
                                 break;
                             }
-                            catch (Exception)
+                            catch (Exception ex)
                             {
+                                FileHelpers.WriteLog(ex.ToString());
                                 if (downloadLinkDetail == downloadLinkDetails.Last()) throw;
                                 continue;
                             }
@@ -867,6 +885,7 @@ namespace Launcher_NewVersion
             catch (Exception ex)
             {
                 Debug.WriteLine("Error in DownloadThread: " + ex.ToString());
+                FileHelpers.WriteLog(ex.ToString());
                 Action action = () =>
                 {
                     Status = LauncherStatus.failed;
@@ -924,8 +943,8 @@ namespace Launcher_NewVersion
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error in DownLoadFile: {ex}");
-                
-                if(isLast) this.isFailed = true;
+                FileHelpers.WriteLog(ex.ToString());
+                if (isLast) this.isFailed = true;
                 throw;
             }
         }
@@ -956,6 +975,7 @@ namespace Launcher_NewVersion
             catch (Exception ex)
             {
                 Debug.WriteLine($"Wc_DownloadProgressChanged failed: {ex}");
+                FileHelpers.WriteLog(ex.ToString());
             }
         }
 
@@ -994,6 +1014,7 @@ namespace Launcher_NewVersion
                     }
                     catch (Exception ex)
                     {
+                        FileHelpers.WriteLog(ex.ToString());
                         file[LibFileValue.State] = StateValue.failed.ToString();
                         File.Delete(downloadFilePath);
                         Debug.WriteLine(ex.ToString());
@@ -1013,8 +1034,9 @@ namespace Launcher_NewVersion
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                FileHelpers.WriteLog(ex.ToString());
                 MessageBox.Show("Đã xảy ra lỗi! Nhấn Sửa lỗi để khắc phục!");
             }
         }
@@ -1094,6 +1116,7 @@ namespace Launcher_NewVersion
             }
             catch (Exception ex)
             {
+                FileHelpers.WriteLog(ex.ToString());
                 Debug.WriteLine($"Error in ExtractFileHashSum: {ex}");
             }
         }
@@ -1107,8 +1130,9 @@ namespace Launcher_NewVersion
                 var fastestUri = speedTestUris.GetFastestLink();
                 priorityMirror = mirrors.FirstOrDefault(mirror => mirror.TestFile == fastestUri).Id;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                FileHelpers.WriteLog(ex.ToString());
                 priorityMirror = "";
             }
         }
@@ -1134,8 +1158,9 @@ namespace Launcher_NewVersion
                         var fileLibValue = File.ReadAllText(Path.GetFullPath(Settings.LibFile));
                         hashSumFileDetail = JsonConvert.DeserializeObject<List<HashSumFileDetail>>(fileLibValue);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        FileHelpers.WriteLog(ex.ToString());
                         ExtractFileHashSum(ref hashSumFileDetail);
                     }
                 }
@@ -1153,16 +1178,19 @@ namespace Launcher_NewVersion
             }
             catch (WebException ex) when (ex.Status == WebExceptionStatus.Timeout)
             {
+                FileHelpers.WriteLog(ex.ToString());
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ConnectionTimeout), 
                                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (WebException ex) when (ex.Status == WebExceptionStatus.SendFailure)
             {
+                FileHelpers.WriteLog(ex.ToString());
                 MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.TlsError),
                     "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
+                FileHelpers.WriteLog(ex.ToString());
                 Debug.WriteLine("Error in AnalyzeRequiredFiles: " + ex.ToString());
                 MessageBoxResult mbr = MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GetServerDataFailed), 
                     "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -1204,6 +1232,7 @@ namespace Launcher_NewVersion
             catch (IOException ex)
             {
                 Debug.WriteLine($"IsFileInUse: File is in use {ex}");
+                FileHelpers.WriteLog(ex.ToString());
                 return true;
             }
             return false;
@@ -1440,9 +1469,10 @@ namespace Launcher_NewVersion
                     Process.Start(cmdFileName);
                     Environment.Exit(0);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    
+
+                    FileHelpers.WriteLog(ex.ToString());
                     MessageBox.Show(_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.ErrorOccurred), 
                         "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
@@ -1478,8 +1508,9 @@ namespace Launcher_NewVersion
                 isClick = false;
                 isFailed = false;
             }
-            catch
+            catch (Exception ex)
             {
+                FileHelpers.WriteLog(ex.ToString());
                 MessageBox.Show("Đã xảy ra lỗi! Nhấn Sửa lỗi để khắc phục!");
             }
         }
