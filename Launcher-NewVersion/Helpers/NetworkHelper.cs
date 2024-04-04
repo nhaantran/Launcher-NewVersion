@@ -256,5 +256,13 @@ namespace Launcher.Helpers
             }
             return json;
         }
+
+        public static void DownloadFileZip(this List<string> urls, string fileName, int timeout = 900000)
+        {
+            urls.DownloadFileFromMultipleUrls(fileName, timeout: timeout);
+            string path = Path.GetFullPath(fileName) + FileExtentions.HlZip.GetDescription();
+            FileExtentions.HlZip.Extract(path, path);
+            File.Delete(path);
+        }
     }
 }

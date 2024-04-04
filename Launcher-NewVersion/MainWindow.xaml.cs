@@ -136,8 +136,7 @@ namespace Launcher_NewVersion
         private void Window_ContentRendered(object sender, EventArgs e)
         {
             Status = LauncherStatus.Checking;
-            JObject configFile = ConfigHelper.ReadConfig();
-            SetupConfigFile(configFile);
+            SetupConfigFile();
             SetUpMessageBoxContent(); 
             UsingDynamicControlsGeneration();
             SetDefaultPropertiesForControls();
@@ -217,8 +216,8 @@ namespace Launcher_NewVersion
                             PlayGame.IsEnabled = true;
                             if (!File.Exists(Path.GetFullPath(Settings.ModeSavedFile)))
                                 File.Create(Path.GetFullPath(Settings.ModeSavedFile)).Close();
-                            //selectMode.IsEnabled = true;
-                            //setMode();
+                            selectMode.IsEnabled = true;
+                            setMode();
                             if (!File.Exists(Path.GetFullPath(Settings.IPSavedFile)))
                                 File.Create(Path.GetFullPath(Settings.IPSavedFile)).Close();
                             File.WriteAllText(Path.GetFullPath(Settings.IPSavedFile), NetworkHelper.GetPublicIpAddress());
@@ -258,19 +257,19 @@ namespace Launcher_NewVersion
 
         private void SelectMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            //try
-            //{
-            //    File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(@"Bin\" + "FairyResources.cfg"), true);
-            //    File.WriteAllText(Path.GetFullPath(modeSavedFile), selectMode.SelectedIndex.ToString());
-            //}
-            //catch (Exception webExcetion)
-            //{
-            //    Debug.WriteLine("Error in selectMode_SelectionChanged: " + webExcetion.ToString());
-            //    string path = Path.GetFullPath(@"Bin\Launcher");
-            //    NetworkHelper.DownloadFileFromMultipleUrls(DownloadFileUri, @"Bin\Launcher\Setting.txt");
-            //    FileExtentions.HlZip.Extract(path + "Setting.txt.hlzip", path + "Setting.txt.hlzip");
-            //    File.Delete(path + "Setting.txt.hlzip");
-            //}
+            try
+            {
+                File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(@"Bin\" + "FairyResources.cfg"), true);
+                File.WriteAllText(Path.GetFullPath(modeSavedFile), selectMode.SelectedIndex.ToString());
+            }
+            catch (Exception webExcetion)
+            {
+                Debug.WriteLine("Error in selectMode_SelectionChanged: " + webExcetion.ToString());
+                string path = Path.GetFullPath(@"Bin\Launcher");
+                NetworkHelper.DownloadFileFromMultipleUrls(DownloadFileUri, @"Bin\Launcher\Setting.txt");
+                FileExtentions.HlZip.Extract(path + "Setting.txt.hlzip", path + "Setting.txt.hlzip");
+                File.Delete(path + "Setting.txt.hlzip");
+            }
         }
 
         private void UsingDynamicControlsGeneration()
@@ -362,10 +361,11 @@ namespace Launcher_NewVersion
             worker.RunWorkerAsync();
         }
         
-        private void SetupConfigFile(JObject config)
+        private void SetupConfigFile()
         {
             try
             {
+                JObject config = ConfigHelper.ReadConfig();
                 var url = config[LauncherFileValue.url];
                 this.newsUri = url[LauncherFileValue.NewsUri].ToObject<List<string>>();
                 //this.HashSumUri = url[LauncherFileValue.HashSumUri].ToObject<List<string>>();
@@ -396,13 +396,6 @@ namespace Launcher_NewVersion
             }
         }
 
-        private void DownloadFileZip(List<string> urls, string fileName)
-        {
-            urls.DownloadFileFromMultipleUrls(fileName, timeout: TIMEOUT);
-            string path = Path.GetFullPath(fileName) + FileExtentions.HlZip.GetDescription();
-            FileExtentions.HlZip.Extract(path, path);
-            File.Delete(path);
-        }
         //Load news
         private void InitNews()
         {
@@ -562,8 +555,6 @@ namespace Launcher_NewVersion
             }
         }
 
-
-
         private void Update(bool forceRecheck = false)
         {
             Status = LauncherStatus.Checking;
@@ -573,7 +564,7 @@ namespace Launcher_NewVersion
             Progress.Visibility = Visibility.Visible;
             Analyzing.Visibility = Visibility.Visible;
             PlayGame.IsEnabled = false;
-            //selectMode.IsEnabled = false;
+            selectMode.IsEnabled = false;
             PlayGame.Opacity = 0.7;
             FixClient.IsEnabled = false;
             FixClient.Opacity = 0.7;
@@ -666,13 +657,13 @@ namespace Launcher_NewVersion
                     Progress.Visibility = Visibility.Hidden;
                     OneFileProgress.Visibility = Visibility.Hidden;
                     FileName.Visibility = Visibility.Hidden;
-                    //selectMode.IsEnabled = true;
+                    selectMode.IsEnabled = true;
                     PlayGame.IsEnabled = true;
                     PlayGame.Opacity = 1;
                     FixClient.IsEnabled = true;
                     FixClient.Opacity = 1;
                     Ver.Text = hashSumData[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
-                    //setMode();
+                    setMode();
                 };
                 this.Dispatcher.Invoke(action);
                 if (fsHashSum != null)
@@ -921,19 +912,6 @@ namespace Launcher_NewVersion
                         FileName.Content = nameoffile[nameoffile.Length - 1];
                     }));
 
-                    //// Create a timer that checks every second if the download has exceeded the timeout
-                    //System.Timers.Timer timer = new System.Timers.Timer(1000);
-                    //timer.Elapsed += (sender, e) =>
-                    //{
-                    //    if (stopwatch.Elapsed.TotalMinutes > 3)
-                    //    {
-                    //        timer.Stop();
-                    //        wc.CancelAsync();
-                    //        MessageBoxContent.Show("Download timed out after 3 minutes.");
-                    //    }
-                    //};
-                    //timer.Start();
-
                     Monitor.Wait(syncObject);
                 }
             }
@@ -945,10 +923,6 @@ namespace Launcher_NewVersion
                 throw;
             }
         }
-
-
-
-
         private void Wc_DownloadFileCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
         {
             lock (e.UserState)
@@ -1166,7 +1140,7 @@ namespace Launcher_NewVersion
                     .FirstOrDefault();
 
                 var loginServerFileUris = hashSumFileDetailUrls.DownloadLink.Select(linkDetail => linkDetail.Url).ToList();
-                DownloadFileZip(loginServerFileUris, Settings.LoginServerFile);
+                loginServerFileUris.DownloadFileZip(Settings.LoginServerFile);
 
                 if (!isClick && !isEmty)
                     ExtractFileHashSum(ref hashSumFileDetail, updateFiles, StateValue.done);
