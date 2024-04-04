@@ -314,9 +314,10 @@ namespace Launcher_NewVersion
                         InitNews();
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     ev.Result = ex;
+                    FileHelpers.WriteLog(ex.ToString());
                 }
             };
             worker.RunWorkerCompleted += (s, ev) =>
@@ -631,9 +632,9 @@ namespace Launcher_NewVersion
                         Progress.Dispatcher.Invoke(new Action(() => { Progress.Content = completedPercent.ToString() + "%"; }));
                         Loading_Copy.Dispatcher.Invoke(new Action(() => { Loading_Copy.Value = completedPercent; }));
                     }
-                    catch
+                    catch (Exception ex)
                     {
-
+                        FileHelpers.WriteLog(ex.ToString());
                     }
 
                     Thread.Sleep(300);
@@ -763,11 +764,12 @@ namespace Launcher_NewVersion
                 }
                 File.WriteAllText(Path.GetFullPath(Settings.LibFile), updateFiles.ToString());
             }
-            catch
+            catch (Exception ex)
             {
                 Action action = () => { Status = LauncherStatus.failed; };
                 this.Dispatcher.Invoke(action);
                 isFailed = true;
+                FileHelpers.WriteLog(ex.ToString());
             }
         }
 
@@ -1222,6 +1224,7 @@ namespace Launcher_NewVersion
             catch (IOException ex)
             {
                 Debug.WriteLine($"IsFileInUse: File is in use {ex}");
+                FileHelpers.WriteLog(ex.ToString());
                 return true;
             }
             return false;
@@ -1497,8 +1500,9 @@ namespace Launcher_NewVersion
                 isClick = false;
                 isFailed = false;
             }
-            catch
+            catch (Exception ex)
             {
+                FileHelpers.WriteLog(ex.ToString());
                 MessageBox.Show("Đã xảy ra lỗi! Nhấn Sửa lỗi để khắc phục!");
             }
         }
