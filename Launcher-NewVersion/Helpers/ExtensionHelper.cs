@@ -49,6 +49,7 @@ namespace Launcher.Helpers
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error in ExtractZipFile {ex}");
+                FileHelpers.WriteLog(ex.ToString());
             }
 
         }

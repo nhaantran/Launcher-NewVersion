@@ -21,9 +21,10 @@ namespace Launcher.Helpers
 
                 return configFile ?? throw new Exception();
             }
-            catch (Exception)
+            catch (Exception ex)
             { 
-                MessageBox.Show(MessageBoxTitle.ConfigFileNotFound.GetDescription(), "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(MessageBoxTitle.ConfigFileNotFound.GetDescription(), ex.GetBaseException().ToString(), MessageBoxButton.OK, MessageBoxImage.Error);
+                FileHelpers.WriteLog(ex.ToString());
                 Environment.Exit(0);
                 return null;
             }
@@ -37,9 +38,12 @@ namespace Launcher.Helpers
                 var messageContent = JObject.Parse(File.ReadAllText(configFilePath)).ToObject<MessageBoxContent>();
                 return messageContent;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 throw;
+                MessageBox.Show(MessageBoxTitle.ConfigFileNotFound.GetDescription(), "TLBB", MessageBoxButton.OK, MessageBoxImage.Error);
+                FileHelpers.WriteLog(ex.ToString());
+                Environment.Exit(0);    
             }
         }
     }
