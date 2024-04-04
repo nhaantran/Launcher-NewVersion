@@ -150,8 +150,16 @@ namespace Launcher_NewVersion
             BackgroundWorker worker = new BackgroundWorker();
             worker.DoWork += (s, ev) =>
             {
-                hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
-                ev.Result = hashSumData;
+                try
+                {
+                    hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
+                    ev.Result = hashSumData;
+                }
+                catch (Exception ex)
+                {
+                    ev.Result = ex;
+                    FileHelpers.WriteLog(ex.ToString());
+                }
             };
             worker.RunWorkerCompleted += (s, ev) =>
             {

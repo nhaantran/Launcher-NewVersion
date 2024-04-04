@@ -22,7 +22,7 @@ namespace Launcher.Helpers
             catch (IOException ex)
             {
                 Debug.WriteLine($"IsFileInUse: File is in use {ex}");
-                FileHelpers.WriteLog(ex.ToString());
+                WriteLog(ex.ToString());
                 return true;
             }
             return false;
