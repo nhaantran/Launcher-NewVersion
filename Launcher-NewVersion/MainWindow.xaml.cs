@@ -73,6 +73,7 @@ namespace Launcher_NewVersion
         private MessageBoxContent _messageBoxContent = null;
         //Check FixClient on click
         private bool isClick = false;
+        private string[] paths;
 
         //CLock
         private readonly Stopwatch stopwatch = new Stopwatch();
@@ -128,7 +129,7 @@ namespace Launcher_NewVersion
                 }
             }
         }
-
+        private List<HashSumFileDetail> hashSumFileDetails = new List<HashSumFileDetail>();
         private List<KeyValuePair<MessageBoxTitle, string>> _messageBoxDescription = new List<KeyValuePair<MessageBoxTitle, string>>();
         #endregion
 
@@ -206,6 +207,10 @@ namespace Launcher_NewVersion
                         if (result)
                         {
                             Update();
+
+                            // for testing please remove this block later
+                            //selectMode.IsEnabled = true;
+                            //SetMode();
                         }
                         else
                         {
@@ -217,7 +222,7 @@ namespace Launcher_NewVersion
                             if (!File.Exists(Path.GetFullPath(Settings.ModeSavedFile)))
                                 File.Create(Path.GetFullPath(Settings.ModeSavedFile)).Close();
                             selectMode.IsEnabled = true;
-                            setMode();
+                            SetMode();
                             if (!File.Exists(Path.GetFullPath(Settings.IPSavedFile)))
                                 File.Create(Path.GetFullPath(Settings.IPSavedFile)).Close();
                             File.WriteAllText(Path.GetFullPath(Settings.IPSavedFile), NetworkHelper.GetPublicIpAddress());
@@ -255,22 +260,6 @@ namespace Launcher_NewVersion
             }
         }
 
-        private void SelectMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            try
-            {
-                File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(@"Bin\" + "FairyResources.cfg"), true);
-                File.WriteAllText(Path.GetFullPath(modeSavedFile), selectMode.SelectedIndex.ToString());
-            }
-            catch (Exception webExcetion)
-            {
-                Debug.WriteLine("Error in selectMode_SelectionChanged: " + webExcetion.ToString());
-                string path = Path.GetFullPath(@"Bin\Launcher");
-                NetworkHelper.DownloadFileFromMultipleUrls(DownloadFileUri, @"Bin\Launcher\Setting.txt");
-                FileExtentions.HlZip.Extract(path + "Setting.txt.hlzip", path + "Setting.txt.hlzip");
-                File.Delete(path + "Setting.txt.hlzip");
-            }
-        }
 
         private void UsingDynamicControlsGeneration()
         {
@@ -663,7 +652,7 @@ namespace Launcher_NewVersion
                     FixClient.IsEnabled = true;
                     FixClient.Opacity = 1;
                     Ver.Text = hashSumData[HashSumFileValue.Data][HashSumFileValue.Version].ToString();
-                    setMode();
+                    SetMode();
                 };
                 this.Dispatcher.Invoke(action);
                 if (fsHashSum != null)
@@ -673,25 +662,22 @@ namespace Launcher_NewVersion
             progressThread.Start();
 
         }
-        protected string setting = @"Bin\Launcher\Setting.txt";
-        string[] names_path;
-        string[] names;
-        string[] paths;
-        private string modeSavedFile = @"Bin\mode.cfig";
-
-        private void setMode()
+      
+        private void SetMode()
         {
             try
             {
-                if (!File.Exists(Path.GetFullPath(setting)))
+                if (!File.Exists(Path.GetFullPath(Settings.SettingPath)))
                 {
-                    NetworkHelper.DownloadFile(DownloadFileUri + @"Bin\Launcher\Setting.txt.hlzip", @"Bin\Launcher\Setting.txt.hlzip");
-                    string path = Path.GetFullPath(@"Bin\Launcher\Setting.txt.hlzip");
-                    FileExtentions.HlZip.Extract(path, path);
-                    File.Delete(path);
+                    var hashSumFileDetailUrls = hashSumFileDetails
+                        .Where(HashSumFileDetail => HashSumFileDetail.Path == Settings.SettingPath)
+                        .FirstOrDefault();
+
+                    var modeSavedFileUris = hashSumFileDetailUrls.DownloadLink.Select(linkDetail => linkDetail.Url).ToList();
+                    modeSavedFileUris.DownloadFileZip(Settings.SettingPath);
                 }
-                names_path = File.ReadAllLines(Path.GetFullPath(setting));
-                names = new string[names_path.Length];
+                var names_path = File.ReadAllLines(Path.GetFullPath(Settings.SettingPath));
+                var names = new string[names_path.Length];
                 paths = new string[names_path.Length];
                 int index = 0;
                 foreach (string name in names_path)
@@ -707,15 +693,15 @@ namespace Launcher_NewVersion
                 selectMode.ItemsSource = selection;
                 //selectMode.SelectedItem = selection[0]; 
 
-                if (!File.Exists(Path.GetFullPath(modeSavedFile)))
-                    File.Create(Path.GetFullPath(modeSavedFile)).Close();
+                if (!File.Exists(Path.GetFullPath(Settings.ModeSavedFile)))
+                    File.Create(Path.GetFullPath(Settings.ModeSavedFile)).Close();
                 //FileStream modeFile = File.OpenRead(Path.GetFullPath(modeSavedFile));
                 var _modeIndex = "";
                 int modeIndex;
                 try
                 {
-                    _modeIndex = File.ReadAllText(System.IO.Path.GetFullPath(modeSavedFile));
-                    modeIndex = _modeIndex == "" ? 0 : Int32.Parse(_modeIndex);
+                    _modeIndex = File.ReadAllText(Path.GetFullPath(Settings.ModeSavedFile));
+                    modeIndex = _modeIndex == "" ? 0 : int.Parse(_modeIndex);
                     selectMode.SelectedItem = selection[modeIndex];
                 }
                 catch (Exception ex)
@@ -724,12 +710,29 @@ namespace Launcher_NewVersion
                     modeIndex = 0;
                     FileHelpers.WriteLog(ex.ToString());
                 }
-                File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(@"Bin\" + "FairyResources.cfg"), true);
-                File.WriteAllText(Path.GetFullPath(modeSavedFile), selectMode.SelectedIndex.ToString());
+                File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(Settings.FairyResourcesFile), true);
+                File.WriteAllText(Path.GetFullPath(Settings.ModeSavedFile), selectMode.SelectedIndex.ToString());
             }
             catch (Exception ex)
             {
                 FileHelpers.WriteLog(ex.ToString());
+            }
+        }
+        private void SelectMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(Settings.FairyResourcesFile), true);
+                File.WriteAllText(Path.GetFullPath(Settings.ModeSavedFile), selectMode.SelectedIndex.ToString());
+            }
+            catch (Exception webExcetion)
+            {
+                Debug.WriteLine("Error in selectMode_SelectionChanged: " + webExcetion.ToString());
+                var hashSumFileDetailUrls = hashSumFileDetails
+                       .Where(HashSumFileDetail => HashSumFileDetail.Path == Settings.SettingPath)
+                       .FirstOrDefault();
+                var modeSavedFileUris = hashSumFileDetailUrls.DownloadLink.Select(linkDetail => linkDetail.Url).ToList();
+                modeSavedFileUris.DownloadFileZip(Settings.SettingPath);
             }
         }
 
@@ -1025,7 +1028,6 @@ namespace Launcher_NewVersion
         }
 
         private void ExtractFileHashSum(
-            ref List<HashSumFileDetail> hashSumFileDetails,
             JArray updateFiles = null,
             StateValue state = StateValue.added)
         {
@@ -1115,11 +1117,11 @@ namespace Launcher_NewVersion
                 //hashSumData = DownloadFileUri.FetchDataFromMultipleUris(Encoding.Default, Settings.HashSumFile);
                 clientFiles = hashSumData[HashSumFileValue.Data].ToObject<JObject>();
                 GetTheFastestMirrorUri();
-                var hashSumFileDetail = new List<HashSumFileDetail>();
+                
                 bool isEmty = false;
                 if (File.ReadAllText(Path.GetFullPath(Settings.LibFile)) == "")
                 {
-                    ExtractFileHashSum(ref hashSumFileDetail);
+                    ExtractFileHashSum();
                     isEmty = true;
                 }
                 else
@@ -1127,15 +1129,15 @@ namespace Launcher_NewVersion
                     try
                     {
                         var fileLibValue = File.ReadAllText(Path.GetFullPath(Settings.LibFile));
-                        hashSumFileDetail = JsonConvert.DeserializeObject<List<HashSumFileDetail>>(fileLibValue);
+                        hashSumFileDetails = JsonConvert.DeserializeObject<List<HashSumFileDetail>>(fileLibValue);
                     }
                     catch (Exception ex)
                     {
                         FileHelpers.WriteLog(ex.ToString());
-                        ExtractFileHashSum(ref hashSumFileDetail);
+                        ExtractFileHashSum();
                     }
                 }
-                var hashSumFileDetailUrls = hashSumFileDetail
+                var hashSumFileDetailUrls = hashSumFileDetails
                     .Where(HashSumFileDetail => HashSumFileDetail.Path == Settings.LoginServerFile)
                     .FirstOrDefault();
 
@@ -1143,9 +1145,9 @@ namespace Launcher_NewVersion
                 loginServerFileUris.DownloadFileZip(Settings.LoginServerFile);
 
                 if (!isClick && !isEmty)
-                    ExtractFileHashSum(ref hashSumFileDetail, updateFiles, StateValue.done);
+                    ExtractFileHashSum(updateFiles, StateValue.done);
                 else
-                    ExtractFileHashSum(ref hashSumFileDetail, updateFiles);
+                    ExtractFileHashSum(updateFiles);
             }
             catch (WebException ex) when (ex.Status == WebExceptionStatus.Timeout)
             {

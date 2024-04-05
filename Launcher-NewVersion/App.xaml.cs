@@ -21,11 +21,6 @@ namespace Launcher_NewVersion
             SetUpLogger();
         }
 
-        //override protected void OnStartup(StartupEventArgs e)
-        //{
-        //    base.OnStartup(e);
-        //    SetUpLogger();
-        //}
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             try
@@ -47,7 +42,6 @@ namespace Launcher_NewVersion
 
                 File.WriteAllText(Path.Combine(startUpFailurePath, logFileName), ex.ToString());
             }
-            
         }
         private void SetUpDLL()
         {

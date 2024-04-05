@@ -17,5 +17,6 @@ namespace Launcher
         public readonly static string ConfigFilePath = _setting["ConfigFilePath"];
         public readonly static string HashSumFile = _setting["HashSumFile"];
         public readonly static string MessageBoxContentFile = _setting["MessageBoxContentFile"];
+        public readonly static string FairyResourcesFile = _setting["FairyResourcesFile"];
     }
 }
