@@ -12,6 +12,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Windows;
@@ -73,8 +74,7 @@ namespace Launcher_NewVersion
         private MessageBoxContent _messageBoxContent = null;
         //Check FixClient on click
         private bool isClick = false;
-        private string[] paths;
-
+        
         //CLock
         private readonly Stopwatch stopwatch = new Stopwatch();
 
@@ -676,41 +676,36 @@ namespace Launcher_NewVersion
                     var modeSavedFileUris = hashSumFileDetailUrls.DownloadLink.Select(linkDetail => linkDetail.Url).ToList();
                     modeSavedFileUris.DownloadFileZip(Settings.SettingPath);
                 }
-                var names_path = File.ReadAllLines(Path.GetFullPath(Settings.SettingPath));
-                var names = new string[names_path.Length];
-                paths = new string[names_path.Length];
-                int index = 0;
-                foreach (string name in names_path)
-                {
-                    string[] subname = name.Split(',');
-                    names[index] = subname[0];
-                    paths[index++] = subname[1];
-                }
-                ////Debug.WriteLine("names: " + names, "paths: " + paths);
-                List<string> selection = new List<string>();
-                for (int i = 0; i < names_path.Length; i++)
-                    selection.Add(names[i]);
-                selectMode.ItemsSource = selection;
-                //selectMode.SelectedItem = selection[0]; 
-
+                var settingContents = File.ReadAllText(Path.GetFullPath(Settings.SettingPath));
+                var effectFiles = JsonConvert.DeserializeObject<List<EffectFile>>(settingContents);
+                var defaultEffectFile = effectFiles.FirstOrDefault();
+                //if (defaultEffectFile.To == null || defaultEffectFile.To == "")
+                //{
+                //    defaultEffectFile.To = Assembly.GetExecutingAssembly().Location;
+                //}
+                //else
+                //{
+                //    defaultEffectFile.To = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), defaultEffectFile.To);
+                //}
+                FileExtentions.Zip.Extract(defaultEffectFile.From, defaultEffectFile.To);
+                var selections_mode = effectFiles.Select(effectFile => effectFile.Name).ToList();
+                selectMode.ItemsSource = selections_mode;
                 if (!File.Exists(Path.GetFullPath(Settings.ModeSavedFile)))
                     File.Create(Path.GetFullPath(Settings.ModeSavedFile)).Close();
-                //FileStream modeFile = File.OpenRead(Path.GetFullPath(modeSavedFile));
                 var _modeIndex = "";
                 int modeIndex;
                 try
                 {
                     _modeIndex = File.ReadAllText(Path.GetFullPath(Settings.ModeSavedFile));
                     modeIndex = _modeIndex == "" ? 0 : int.Parse(_modeIndex);
-                    selectMode.SelectedItem = selection[modeIndex];
+                    selectMode.SelectedItem = selections_mode[modeIndex];
                 }
                 catch (Exception ex)
                 {
-                    selectMode.SelectedItem = selection[0];
+                    selectMode.SelectedItem = selections_mode[0];
                     modeIndex = 0;
                     FileHelpers.WriteLog(ex.ToString());
                 }
-                File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(Settings.FairyResourcesFile), true);
                 File.WriteAllText(Path.GetFullPath(Settings.ModeSavedFile), selectMode.SelectedIndex.ToString());
             }
             catch (Exception ex)
@@ -718,16 +713,21 @@ namespace Launcher_NewVersion
                 FileHelpers.WriteLog(ex.ToString());
             }
         }
+
         private void SelectMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             try
             {
-                File.Copy(Path.GetFullPath(paths[selectMode.SelectedIndex]), Path.GetFullPath(Settings.FairyResourcesFile), true);
+                var something = selectMode.SelectedValue.ToString();
+                var settingContents = File.ReadAllText(Path.GetFullPath(Settings.SettingPath));
+                var effectFiles = JsonConvert.DeserializeObject<List<EffectFile>>(settingContents);
+                var selectedEffectFile = effectFiles.Where(effectFile => effectFile.Name == something).FirstOrDefault();
+                FileExtentions.Zip.Extract(selectedEffectFile.From, selectedEffectFile.To);
                 File.WriteAllText(Path.GetFullPath(Settings.ModeSavedFile), selectMode.SelectedIndex.ToString());
             }
-            catch (Exception webExcetion)
+            catch (Exception ex)
             {
-                Debug.WriteLine("Error in selectMode_SelectionChanged: " + webExcetion.ToString());
+                Debug.WriteLine("Error in selectMode_SelectionChanged: " + ex.ToString());
                 var hashSumFileDetailUrls = hashSumFileDetails
                        .Where(HashSumFileDetail => HashSumFileDetail.Path == Settings.SettingPath)
                        .FirstOrDefault();

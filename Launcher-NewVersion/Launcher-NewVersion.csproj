@@ -88,6 +88,7 @@
     <Compile Include="Helpers\TimeOutWebClientHelper.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Models\EffectFile.cs" />
     <Compile Include="Models\FileExtentions.cs" />
     <Compile Include="Models\HashSumFileValue.cs" />
     <Compile Include="Models\DownloadLinkDetail.cs" />

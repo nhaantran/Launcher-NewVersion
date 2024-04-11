@@ -34,7 +34,7 @@ namespace Launcher.Helpers
             }
         }
 
-        public static void ExtractZipFile(string sourceFile, string destinationDirectory)
+        private static void ExtractZipFile(string sourceFile, string destinationDirectory)
         {
             try
             {
