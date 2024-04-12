@@ -209,8 +209,8 @@ namespace Launcher_NewVersion
                             Update();
 
                             // for testing please remove this block later
-                            //selectMode.IsEnabled = true;
-                            //SetMode();
+                            selectMode.IsEnabled = true;
+                            SetMode();
                         }
                         else
                         {
@@ -676,17 +676,19 @@ namespace Launcher_NewVersion
                     var modeSavedFileUris = hashSumFileDetailUrls.DownloadLink.Select(linkDetail => linkDetail.Url).ToList();
                     modeSavedFileUris.DownloadFileZip(Settings.SettingPath);
                 }
+                FileInfo fileInfo = new FileInfo(Settings.SettingPath);
+                if (fileInfo.Exists && fileInfo.Length == 0)
+                {
+                    selectMode.Visibility = Visibility.Hidden;
+                    return;
+                }
                 var settingContents = File.ReadAllText(Path.GetFullPath(Settings.SettingPath));
                 var effectFiles = JsonConvert.DeserializeObject<List<EffectFile>>(settingContents);
                 var defaultEffectFile = effectFiles.FirstOrDefault();
-                //if (defaultEffectFile.To == null || defaultEffectFile.To == "")
-                //{
-                //    defaultEffectFile.To = Assembly.GetExecutingAssembly().Location;
-                //}
-                //else
-                //{
-                //    defaultEffectFile.To = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), defaultEffectFile.To);
-                //}
+                if (defaultEffectFile.To == null || defaultEffectFile.To == "")
+                {
+                    defaultEffectFile.To = Assembly.GetExecutingAssembly().Location;
+                }
                 FileExtentions.Zip.Extract(defaultEffectFile.From, defaultEffectFile.To);
                 var selections_mode = effectFiles.Select(effectFile => effectFile.Name).ToList();
                 selectMode.ItemsSource = selections_mode;
@@ -722,6 +724,10 @@ namespace Launcher_NewVersion
                 var settingContents = File.ReadAllText(Path.GetFullPath(Settings.SettingPath));
                 var effectFiles = JsonConvert.DeserializeObject<List<EffectFile>>(settingContents);
                 var selectedEffectFile = effectFiles.Where(effectFile => effectFile.Name == something).FirstOrDefault();
+                if (selectedEffectFile.To == null || selectedEffectFile.To == "")
+                {
+                    selectedEffectFile.To = Assembly.GetExecutingAssembly().Location;
+                }
                 FileExtentions.Zip.Extract(selectedEffectFile.From, selectedEffectFile.To);
                 File.WriteAllText(Path.GetFullPath(Settings.ModeSavedFile), selectMode.SelectedIndex.ToString());
             }
