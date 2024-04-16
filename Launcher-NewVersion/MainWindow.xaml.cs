@@ -208,9 +208,9 @@ namespace Launcher_NewVersion
                         {
                             Update();
 
-                            // for testing please remove this block later
-                            selectMode.IsEnabled = true;
-                            SetMode();
+                            //for testing please remove this block later
+                            //selectMode.IsEnabled = true;
+                            //SetMode();
                         }
                         else
                         {
@@ -662,7 +662,7 @@ namespace Launcher_NewVersion
             progressThread.Start();
 
         }
-      
+        
         private void SetMode()
         {
             try
