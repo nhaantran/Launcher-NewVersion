@@ -36,13 +36,11 @@ Add new folder
   mkdir Data/Libs
 ```
 
-Open the .../Launcher-NewVersion/bin/Debug folder
+Open the .../Launcher-NewVersion/bin/Debug folder and add launcher.json and messagebox.json
 ![Add config file](https://github.com/nhaantran/Launcher-NewVersion/blob/master/Launcher-NewVersion/img/README/Add_config_file.jpg?raw=true)
 
 
-Add launcher.json and messagebox.json
-
-Add config file and run the project
+Run the project
 ```bash
   start Launcher.exe
 ```
