@@ -28,7 +28,7 @@ Open in Visual Studio and keep the terminal open
   start Launcher-NewVersion.sln
 ```
 Build the project using Ctrl + Shift + B or follow the image
-![Build Solution](https://github.com/nhaantran/Launcher-NewVersion/tree/master/Launcher-NewVersion/img/README/Build_solution.jpg)
+![Build Solution](https://github.com/nhaantran/Launcher-NewVersion/blob/master/Launcher-NewVersion/img/README/Build_solution.jpg?raw=true)
 
 Add new folder
 ```bash
@@ -37,6 +37,7 @@ Add new folder
 ```
 
 Open the .../Launcher-NewVersion/bin/Debug folder
+![Add config file](https://github.com/nhaantran/Launcher-NewVersion/blob/master/Launcher-NewVersion/img/README/Add_config_file.jpg?raw=true)
 
 
 Add launcher.json and messagebox.json
