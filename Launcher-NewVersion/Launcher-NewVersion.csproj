@@ -191,5 +191,11 @@
   <ItemGroup>
     <Resource Include="Icon.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\README\Add_config_file.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\README\Build_solution.jpg" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
