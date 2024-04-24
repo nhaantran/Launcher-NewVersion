@@ -37,7 +37,7 @@ namespace Launcher_NewVersion
          * For publish purpose
          * OPEN TERMINAL IN PROJECT FOLDER
          * USE THIS COMMAND TO PUBLISH
-          msbuild /p:TargetFramework=net35 /p:Configuration=Release /p:PublishSingleFile=true
+          msbuild /p:TargetFramework=net35 /p:Configuration=Release
         */
         #region Configurable Varibles
         private static readonly double WIDTH = 1080f;
@@ -311,7 +311,7 @@ namespace Launcher_NewVersion
                 catch (Exception ex)
                 {
                     ev.Result = ex;
-                    FileHelpers.WriteLog(ex.ToString());
+                    FileHelpers.WriteLog("[FetchingNewsFromSeverInBackground]" + ex.ToString());
                 }
             };
             worker.RunWorkerCompleted += (s, ev) =>
@@ -335,12 +335,12 @@ namespace Launcher_NewVersion
                     }
                     EnableButtonsIfError();
                 }
-                else if (ev.Result is FetchingErrorException)
+                else if (ev.Result is FetchingErrorException e)
                 {
                     MessageBox.Show($"News: {_messageBoxDescription.GetMessageBoxDescription(MessageBoxTitle.GetServerDataFailed)}", 
                         "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     EnableButtonsIfError();
-                    FileHelpers.WriteLog("[FetchingNewsFromSeverInBackground]" + ex.ToString());
+                    FileHelpers.WriteLog("[FetchingNewsFromSeverInBackground]" + e.ToString());
                 }
                 else if (ev.Result is Exception ex)
                 {
