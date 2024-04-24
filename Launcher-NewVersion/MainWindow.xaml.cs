@@ -1125,6 +1125,7 @@ namespace Launcher_NewVersion
                 GetTheFastestMirrorUri();
                 
                 bool isEmty = false;
+                // Check if lib file is empty then extract file hash sum to lib file
                 if (File.ReadAllText(Path.GetFullPath(Settings.LibFile)) == "")
                 {
                     ExtractFileHashSum();
@@ -1143,13 +1144,6 @@ namespace Launcher_NewVersion
                         ExtractFileHashSum();
                     }
                 }
-                var hashSumFileDetailUrls = hashSumFileDetails
-                    .Where(HashSumFileDetail => HashSumFileDetail.Path == Settings.LoginServerFile)
-                    .FirstOrDefault();
-
-                var loginServerFileUris = hashSumFileDetailUrls.DownloadLink.Select(linkDetail => linkDetail.Url).ToList();
-                loginServerFileUris.DownloadFileZip(Settings.LoginServerFile);
-
                 if (!isClick && !isEmty)
                     ExtractFileHashSum(updateFiles, StateValue.done);
                 else
